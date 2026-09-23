@@ -1,0 +1,887 @@
+[
+  {
+    "base_value": 0.0,
+    "predicted_probability": 0.8501,
+    "top_contributions": [
+      {
+        "feature": "alt_latest_pre_cutoff",
+        "value": 45.3,
+        "shap_value": 0.949,
+        "abs_magnitude": 0.949,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "platelets_latest_pre_cutoff",
+        "value": 147.7,
+        "shap_value": 0.50612,
+        "abs_magnitude": 0.50612,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "doses_missed_pre_cutoff",
+        "value": 0.0,
+        "shap_value": -0.44752,
+        "abs_magnitude": 0.44752,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "baseline_health_score",
+        "value": 77.0,
+        "shap_value": 0.34867,
+        "abs_magnitude": 0.34867,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "doses_administered_pre_cutoff",
+        "value": 5.0,
+        "shap_value": -0.27618,
+        "abs_magnitude": 0.27618,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "frailty_index",
+        "value": 0.59,
+        "shap_value": 0.26556,
+        "abs_magnitude": 0.26556,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "abnormal_measurement_count_pre_cutoff",
+        "value": 2.0,
+        "shap_value": 0.22379,
+        "abs_magnitude": 0.22379,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "systolic_bp_latest_pre_cutoff",
+        "value": 138.2,
+        "shap_value": 0.19376,
+        "abs_magnitude": 0.19376,
+        "direction": "INCREASES_RISK"
+      }
+    ],
+    "all_contributions": [
+      {
+        "feature": "alt_latest_pre_cutoff",
+        "value": 45.3,
+        "shap_value": 0.949,
+        "abs_magnitude": 0.949,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "platelets_latest_pre_cutoff",
+        "value": 147.7,
+        "shap_value": 0.50612,
+        "abs_magnitude": 0.50612,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "doses_missed_pre_cutoff",
+        "value": 0.0,
+        "shap_value": -0.44752,
+        "abs_magnitude": 0.44752,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "baseline_health_score",
+        "value": 77.0,
+        "shap_value": 0.34867,
+        "abs_magnitude": 0.34867,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "doses_administered_pre_cutoff",
+        "value": 5.0,
+        "shap_value": -0.27618,
+        "abs_magnitude": 0.27618,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "frailty_index",
+        "value": 0.59,
+        "shap_value": 0.26556,
+        "abs_magnitude": 0.26556,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "abnormal_measurement_count_pre_cutoff",
+        "value": 2.0,
+        "shap_value": 0.22379,
+        "abs_magnitude": 0.22379,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "systolic_bp_latest_pre_cutoff",
+        "value": 138.2,
+        "shap_value": 0.19376,
+        "abs_magnitude": 0.19376,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "alt_elevation_ratio_pre_cutoff",
+        "value": 0.809,
+        "shap_value": 0.19307,
+        "abs_magnitude": 0.19307,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "systolic_bp_baseline",
+        "value": 134.4,
+        "shap_value": -0.19112,
+        "abs_magnitude": 0.19112,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "adherence_ratio_pre_cutoff",
+        "value": 1.0,
+        "shap_value": -0.17069,
+        "abs_magnitude": 0.17069,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "cumulative_dose_mg_pre_cutoff",
+        "value": 500.0,
+        "shap_value": -0.15819,
+        "abs_magnitude": 0.15819,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "visits_attended_pre_cutoff",
+        "value": 3.0,
+        "shap_value": -0.1366,
+        "abs_magnitude": 0.1366,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "platelets_baseline",
+        "value": 220.7,
+        "shap_value": 0.13219,
+        "abs_magnitude": 0.13219,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "ae_max_grade_pre_cutoff",
+        "value": 2.0,
+        "shap_value": 0.07352,
+        "abs_magnitude": 0.07352,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "visits_scheduled_pre_cutoff",
+        "value": 3.0,
+        "shap_value": -0.04859,
+        "abs_magnitude": 0.04859,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "ae_count_pre_cutoff",
+        "value": 1.0,
+        "shap_value": -0.04746,
+        "abs_magnitude": 0.04746,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "is_female",
+        "value": 0.0,
+        "shap_value": 0.03926,
+        "abs_magnitude": 0.03926,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "abnormal_measurement_rate_pre_cutoff",
+        "value": 0.2222,
+        "shap_value": 0.03911,
+        "abs_magnitude": 0.03911,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "alt_baseline",
+        "value": 34.1,
+        "shap_value": -0.03158,
+        "abs_magnitude": 0.03158,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "platelets_pct_change_pre_cutoff",
+        "value": -33.08,
+        "shap_value": 0.02763,
+        "abs_magnitude": 0.02763,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "is_experimental_arm",
+        "value": 1.0,
+        "shap_value": 0.02273,
+        "abs_magnitude": 0.02273,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "systolic_bp_change_pre_cutoff",
+        "value": 3.8,
+        "shap_value": 0.01832,
+        "abs_magnitude": 0.01832,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "measurement_count_pre_cutoff",
+        "value": 9.0,
+        "shap_value": 0.01815,
+        "abs_magnitude": 0.01815,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "is_high_travel_burden",
+        "value": 0.0,
+        "shap_value": -0.01477,
+        "abs_magnitude": 0.01477,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "doses_scheduled_pre_cutoff",
+        "value": 5.0,
+        "shap_value": -0.00374,
+        "abs_magnitude": 0.00374,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "doses_reduced_pre_cutoff",
+        "value": 0.0,
+        "shap_value": 0.00368,
+        "abs_magnitude": 0.00368,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "ae_serious_count_pre_cutoff",
+        "value": 0.0,
+        "shap_value": -0.00225,
+        "abs_magnitude": 0.00225,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "age",
+        "value": 28.0,
+        "shap_value": 0.00173,
+        "abs_magnitude": 0.00173,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "visit_attendance_rate_pre_cutoff",
+        "value": 1.0,
+        "shap_value": -0.0017,
+        "abs_magnitude": 0.0017,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "visits_missed_pre_cutoff",
+        "value": 0.0,
+        "shap_value": -0.00161,
+        "abs_magnitude": 0.00161,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "ae_burden_score_pre_cutoff",
+        "value": 2.0,
+        "shap_value": -0.00155,
+        "abs_magnitude": 0.00155,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "has_drug_related_ae_pre_cutoff",
+        "value": 0.0,
+        "shap_value": 0.0005,
+        "abs_magnitude": 0.0005,
+        "direction": "INCREASES_RISK"
+      }
+    ]
+  },
+  {
+    "base_value": 0.0,
+    "predicted_probability": 0.4562,
+    "top_contributions": [
+      {
+        "feature": "visits_attended_pre_cutoff",
+        "value": 2.0,
+        "shap_value": 0.96907,
+        "abs_magnitude": 0.96907,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "platelets_latest_pre_cutoff",
+        "value": 215.8,
+        "shap_value": -0.3032,
+        "abs_magnitude": 0.3032,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "alt_latest_pre_cutoff",
+        "value": 39.8,
+        "shap_value": 0.30098,
+        "abs_magnitude": 0.30098,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "doses_missed_pre_cutoff",
+        "value": 0.0,
+        "shap_value": -0.28971,
+        "abs_magnitude": 0.28971,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "alt_baseline",
+        "value": 41.8,
+        "shap_value": -0.2852,
+        "abs_magnitude": 0.2852,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "doses_administered_pre_cutoff",
+        "value": 5.0,
+        "shap_value": -0.26212,
+        "abs_magnitude": 0.26212,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "platelets_baseline",
+        "value": 179.6,
+        "shap_value": 0.19415,
+        "abs_magnitude": 0.19415,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "adherence_ratio_pre_cutoff",
+        "value": 1.0,
+        "shap_value": -0.15108,
+        "abs_magnitude": 0.15108,
+        "direction": "DECREASES_RISK"
+      }
+    ],
+    "all_contributions": [
+      {
+        "feature": "visits_attended_pre_cutoff",
+        "value": 2.0,
+        "shap_value": 0.96907,
+        "abs_magnitude": 0.96907,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "platelets_latest_pre_cutoff",
+        "value": 215.8,
+        "shap_value": -0.3032,
+        "abs_magnitude": 0.3032,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "alt_latest_pre_cutoff",
+        "value": 39.8,
+        "shap_value": 0.30098,
+        "abs_magnitude": 0.30098,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "doses_missed_pre_cutoff",
+        "value": 0.0,
+        "shap_value": -0.28971,
+        "abs_magnitude": 0.28971,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "alt_baseline",
+        "value": 41.8,
+        "shap_value": -0.2852,
+        "abs_magnitude": 0.2852,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "doses_administered_pre_cutoff",
+        "value": 5.0,
+        "shap_value": -0.26212,
+        "abs_magnitude": 0.26212,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "platelets_baseline",
+        "value": 179.6,
+        "shap_value": 0.19415,
+        "abs_magnitude": 0.19415,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "adherence_ratio_pre_cutoff",
+        "value": 1.0,
+        "shap_value": -0.15108,
+        "abs_magnitude": 0.15108,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "platelets_pct_change_pre_cutoff",
+        "value": 20.16,
+        "shap_value": -0.13637,
+        "abs_magnitude": 0.13637,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "systolic_bp_baseline",
+        "value": 120.9,
+        "shap_value": 0.13551,
+        "abs_magnitude": 0.13551,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "baseline_health_score",
+        "value": 66.8,
+        "shap_value": -0.1309,
+        "abs_magnitude": 0.1309,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "age",
+        "value": 62.0,
+        "shap_value": -0.10392,
+        "abs_magnitude": 0.10392,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "systolic_bp_latest_pre_cutoff",
+        "value": 128.3,
+        "shap_value": -0.08097,
+        "abs_magnitude": 0.08097,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "visits_scheduled_pre_cutoff",
+        "value": 3.0,
+        "shap_value": -0.0714,
+        "abs_magnitude": 0.0714,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "cumulative_dose_mg_pre_cutoff",
+        "value": 250.0,
+        "shap_value": 0.06844,
+        "abs_magnitude": 0.06844,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "abnormal_measurement_count_pre_cutoff",
+        "value": 0.0,
+        "shap_value": -0.06578,
+        "abs_magnitude": 0.06578,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "systolic_bp_change_pre_cutoff",
+        "value": 7.4,
+        "shap_value": -0.05999,
+        "abs_magnitude": 0.05999,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "frailty_index",
+        "value": 0.422,
+        "shap_value": 0.05585,
+        "abs_magnitude": 0.05585,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "ae_count_pre_cutoff",
+        "value": 1.0,
+        "shap_value": -0.04331,
+        "abs_magnitude": 0.04331,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "abnormal_measurement_rate_pre_cutoff",
+        "value": 0.0,
+        "shap_value": -0.03454,
+        "abs_magnitude": 0.03454,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "ae_max_grade_pre_cutoff",
+        "value": 1.0,
+        "shap_value": -0.02607,
+        "abs_magnitude": 0.02607,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "measurement_count_pre_cutoff",
+        "value": 6.0,
+        "shap_value": -0.01956,
+        "abs_magnitude": 0.01956,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "is_experimental_arm",
+        "value": 0.0,
+        "shap_value": -0.01876,
+        "abs_magnitude": 0.01876,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "is_high_travel_burden",
+        "value": 0.0,
+        "shap_value": -0.01462,
+        "abs_magnitude": 0.01462,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "doses_scheduled_pre_cutoff",
+        "value": 5.0,
+        "shap_value": -0.01148,
+        "abs_magnitude": 0.01148,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "ae_burden_score_pre_cutoff",
+        "value": 1.0,
+        "shap_value": -0.00751,
+        "abs_magnitude": 0.00751,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "is_female",
+        "value": 0.0,
+        "shap_value": 0.00559,
+        "abs_magnitude": 0.00559,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "visits_missed_pre_cutoff",
+        "value": 1.0,
+        "shap_value": 0.00243,
+        "abs_magnitude": 0.00243,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "ae_serious_count_pre_cutoff",
+        "value": 0.0,
+        "shap_value": -0.00213,
+        "abs_magnitude": 0.00213,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "visit_attendance_rate_pre_cutoff",
+        "value": 0.6667,
+        "shap_value": -0.0017,
+        "abs_magnitude": 0.0017,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "alt_elevation_ratio_pre_cutoff",
+        "value": 0.711,
+        "shap_value": -0.00136,
+        "abs_magnitude": 0.00136,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "doses_reduced_pre_cutoff",
+        "value": 0.0,
+        "shap_value": 0.00093,
+        "abs_magnitude": 0.00093,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "has_drug_related_ae_pre_cutoff",
+        "value": 0.0,
+        "shap_value": 0.0005,
+        "abs_magnitude": 0.0005,
+        "direction": "INCREASES_RISK"
+      }
+    ]
+  },
+  {
+    "base_value": 0.0,
+    "predicted_probability": 0.7692,
+    "top_contributions": [
+      {
+        "feature": "alt_latest_pre_cutoff",
+        "value": 48.2,
+        "shap_value": 1.11109,
+        "abs_magnitude": 1.11109,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "adherence_ratio_pre_cutoff",
+        "value": 0.5,
+        "shap_value": 0.4886,
+        "abs_magnitude": 0.4886,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "frailty_index",
+        "value": 0.995,
+        "shap_value": -0.38696,
+        "abs_magnitude": 0.38696,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "doses_administered_pre_cutoff",
+        "value": 1.0,
+        "shap_value": 0.346,
+        "abs_magnitude": 0.346,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "visits_attended_pre_cutoff",
+        "value": 3.0,
+        "shap_value": -0.26445,
+        "abs_magnitude": 0.26445,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "doses_missed_pre_cutoff",
+        "value": 1.0,
+        "shap_value": 0.20164,
+        "abs_magnitude": 0.20164,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "systolic_bp_change_pre_cutoff",
+        "value": 11.0,
+        "shap_value": -0.17469,
+        "abs_magnitude": 0.17469,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "cumulative_dose_mg_pre_cutoff",
+        "value": 125.0,
+        "shap_value": 0.13152,
+        "abs_magnitude": 0.13152,
+        "direction": "INCREASES_RISK"
+      }
+    ],
+    "all_contributions": [
+      {
+        "feature": "alt_latest_pre_cutoff",
+        "value": 48.2,
+        "shap_value": 1.11109,
+        "abs_magnitude": 1.11109,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "adherence_ratio_pre_cutoff",
+        "value": 0.5,
+        "shap_value": 0.4886,
+        "abs_magnitude": 0.4886,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "frailty_index",
+        "value": 0.995,
+        "shap_value": -0.38696,
+        "abs_magnitude": 0.38696,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "doses_administered_pre_cutoff",
+        "value": 1.0,
+        "shap_value": 0.346,
+        "abs_magnitude": 0.346,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "visits_attended_pre_cutoff",
+        "value": 3.0,
+        "shap_value": -0.26445,
+        "abs_magnitude": 0.26445,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "doses_missed_pre_cutoff",
+        "value": 1.0,
+        "shap_value": 0.20164,
+        "abs_magnitude": 0.20164,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "systolic_bp_change_pre_cutoff",
+        "value": 11.0,
+        "shap_value": -0.17469,
+        "abs_magnitude": 0.17469,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "cumulative_dose_mg_pre_cutoff",
+        "value": 125.0,
+        "shap_value": 0.13152,
+        "abs_magnitude": 0.13152,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "baseline_health_score",
+        "value": 58.9,
+        "shap_value": -0.12998,
+        "abs_magnitude": 0.12998,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "alt_elevation_ratio_pre_cutoff",
+        "value": 0.861,
+        "shap_value": 0.12914,
+        "abs_magnitude": 0.12914,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "platelets_latest_pre_cutoff",
+        "value": 231.0,
+        "shap_value": -0.12797,
+        "abs_magnitude": 0.12797,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "systolic_bp_latest_pre_cutoff",
+        "value": 138.2,
+        "shap_value": 0.12079,
+        "abs_magnitude": 0.12079,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "is_experimental_arm",
+        "value": 0.0,
+        "shap_value": -0.09072,
+        "abs_magnitude": 0.09072,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "is_female",
+        "value": 1.0,
+        "shap_value": -0.09008,
+        "abs_magnitude": 0.09008,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "platelets_pct_change_pre_cutoff",
+        "value": 13.79,
+        "shap_value": -0.0712,
+        "abs_magnitude": 0.0712,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "abnormal_measurement_count_pre_cutoff",
+        "value": 0.0,
+        "shap_value": -0.06694,
+        "abs_magnitude": 0.06694,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "systolic_bp_baseline",
+        "value": 127.2,
+        "shap_value": 0.05249,
+        "abs_magnitude": 0.05249,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "platelets_baseline",
+        "value": 203.0,
+        "shap_value": 0.04897,
+        "abs_magnitude": 0.04897,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "age",
+        "value": 53.0,
+        "shap_value": -0.04728,
+        "abs_magnitude": 0.04728,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "visits_scheduled_pre_cutoff",
+        "value": 3.0,
+        "shap_value": -0.04448,
+        "abs_magnitude": 0.04448,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "ae_max_grade_pre_cutoff",
+        "value": 0.0,
+        "shap_value": -0.04391,
+        "abs_magnitude": 0.04391,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "measurement_count_pre_cutoff",
+        "value": 6.0,
+        "shap_value": -0.03688,
+        "abs_magnitude": 0.03688,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "alt_baseline",
+        "value": 41.8,
+        "shap_value": -0.03125,
+        "abs_magnitude": 0.03125,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "abnormal_measurement_rate_pre_cutoff",
+        "value": 0.0,
+        "shap_value": -0.02926,
+        "abs_magnitude": 0.02926,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "is_high_travel_burden",
+        "value": 1.0,
+        "shap_value": 0.01501,
+        "abs_magnitude": 0.01501,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "doses_scheduled_pre_cutoff",
+        "value": 5.0,
+        "shap_value": -0.00964,
+        "abs_magnitude": 0.00964,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "doses_reduced_pre_cutoff",
+        "value": 3.0,
+        "shap_value": -0.00635,
+        "abs_magnitude": 0.00635,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "ae_burden_score_pre_cutoff",
+        "value": 0.0,
+        "shap_value": -0.00389,
+        "abs_magnitude": 0.00389,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "has_drug_related_ae_pre_cutoff",
+        "value": 0.0,
+        "shap_value": 0.00371,
+        "abs_magnitude": 0.00371,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "ae_count_pre_cutoff",
+        "value": 0.0,
+        "shap_value": 0.00346,
+        "abs_magnitude": 0.00346,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "ae_serious_count_pre_cutoff",
+        "value": 0.0,
+        "shap_value": -0.00216,
+        "abs_magnitude": 0.00216,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "visits_missed_pre_cutoff",
+        "value": 0.0,
+        "shap_value": -0.00151,
+        "abs_magnitude": 0.00151,
+        "direction": "DECREASES_RISK"
+      },
+      {
+        "feature": "visit_attendance_rate_pre_cutoff",
+        "value": 1.0,
+        "shap_value": -0.00136,
+        "abs_magnitude": 0.00136,
+        "direction": "DECREASES_RISK"
+      }
+    ]
+  }
+]

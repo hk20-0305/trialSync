@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 
 import { ProtectedRoute } from '../auth/ProtectedRoute'
 import { AppLayout } from '../components/AppLayout'
@@ -21,6 +21,10 @@ import { ScreeningDetailPage } from '../pages/ScreeningDetailPage'
 import { ScreeningHistoryPage } from '../pages/ScreeningHistoryPage'
 import { RouteErrorPage } from '../pages/RouteErrorPage'
 import { CatalogManagementPage } from '../pages/CatalogManagementPage'
+import { ResearchCohortPage } from '../pages/ResearchCohortPage'
+import { ResearchDropoutPage } from '../pages/ResearchDropoutPage'
+import { ResearchRagPage } from '../pages/ResearchRagPage'
+import { ResearchWorkspacePage } from '../pages/ResearchWorkspacePage'
 
 export const routes = [
   { path: '/login', element: <AuthPage mode="login" />, errorElement: <RouteErrorPage /> },
@@ -50,6 +54,17 @@ export const routes = [
           { path: 'batches/:batchId', element: <BatchDetailPage /> },
           { path: 'catalog', element: <CatalogManagementPage /> },
           { path: 'help', element: <HelpPage /> },
+          // Research workspace — nested routes with subnav
+          {
+            path: 'research',
+            element: <ResearchWorkspacePage />,
+            children: [
+              { index: true, element: <Navigate to="dropout" replace /> },
+              { path: 'dropout', element: <ResearchDropoutPage /> },
+              { path: 'cohort', element: <ResearchCohortPage /> },
+              { path: 'rag', element: <ResearchRagPage /> },
+            ],
+          },
           { path: '*', element: <NotFoundPage /> },
         ],
       },

@@ -1653,3 +1653,672 @@ describe('TrialSync Phase 5 screening workflow', () => {
     })
   })
 })
+
+// ─────────────────────────────────────────────────────────────
+// Phase R8 — Research Pages
+// ─────────────────────────────────────────────────────────────
+
+describe('Phase R10 — ResearchCohortPage', () => {
+  let fetchMock: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    const preferences = new Map<string, string>()
+    vi.stubEnv('VITE_API_BASE_URL', '/api/v1')
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => preferences.get(key) ?? null,
+      setItem: (key: string, value: string) => preferences.set(key, value),
+      removeItem: (key: string) => preferences.delete(key),
+      clear: () => preferences.clear(),
+    })
+    sessionStorage.clear()
+    fetchMock = vi.fn((input: string) => {
+      if (input.includes('/research/cohort/health')) {
+        return Promise.resolve(json(cohortHealthResponse))
+      }
+      if (input.includes('/research/cohort/summary')) {
+        return Promise.resolve(json(cohortSummaryResponse))
+      }
+      if (input.includes('/research/cohort/clusters')) {
+        return Promise.resolve(json(cohortClustersResponse))
+      }
+      if (input.includes('/research/cohort/projection')) {
+        return Promise.resolve(json(cohortProjectionResponse))
+      }
+      if (input.includes('/research/cohort/nearest')) {
+        return Promise.resolve(json(cohortNearestResponse))
+      }
+      return Promise.resolve(json({}))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    authenticate()
+  })
+  afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
+
+  const cohortHealthResponse = {
+    status: 'UP',
+    participant_count: 400,
+    faiss_total_indexed: 400,
+    cluster_count: 0,
+  }
+
+  const cohortSummaryResponse = {
+    participant_count: 400,
+    feature_dimension: 33,
+    cluster_count: 0,
+    noise_count: 400,
+    noise_percentage: 1.0,
+    dbscan_parameters: {
+      eps: 0.6,
+      min_samples: 10,
+      metric: 'euclidean',
+    },
+    pca_explained_variance: {
+      explained_variance_ratio: { PC1: 0.1825, PC2: 0.12115 },
+      cumulative_explained_variance: 0.30365,
+    },
+    artifact_metadata: {
+      faiss_metric: 'L2_EUCLIDEAN',
+      faiss_index_type: 'IndexFlatL2',
+    },
+  }
+
+  const cohortClustersResponse = [
+    {
+      cluster_label: -1,
+      size: 400,
+      size_pct: 1.0,
+      is_noise: true,
+      means: { age: 47.2 },
+    },
+  ]
+
+  const cohortProjectionResponse = {
+    total: 400,
+    page: 1,
+    page_size: 50,
+    total_pages: 8,
+    cluster_filter: null,
+    items: [
+      {
+        participant_id: 'bdd640fb-0667-4ad1-9c80-317fa3b1799d',
+        pc1: 2.57073,
+        pc2: 2.25249,
+        cluster_label: -1,
+        is_noise: true,
+      },
+      {
+        participant_id: '827050a8-2369-4584-bf5e-9ff0ff50bde4',
+        pc1: 0.93092,
+        pc2: -1.72153,
+        cluster_label: -1,
+        is_noise: true,
+      },
+    ],
+  }
+
+  const cohortNearestResponse = {
+    participant_id: 'bdd640fb-0667-4ad1-9c80-317fa3b1799d',
+    k: 2,
+    neighbors: [
+      {
+        rank: 1,
+        participant_id: '243191eb-5d9e-4717-bf08-6a9e569db57e',
+        faiss_index: 104,
+        l2_distance: 24.43152,
+        similarity_score: 0.03932,
+      },
+      {
+        rank: 2,
+        participant_id: '0e731dd7-c6ac-4b04-9d1d-6cd1c11f6bf5',
+        faiss_index: 16,
+        l2_distance: 24.5449,
+        similarity_score: 0.03915,
+      },
+    ],
+  }
+
+  it('renders the Cohort Atlas heading and research disclaimer', async () => {
+    renderRoute('/research/cohort')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Cohort Atlas' })).toBeInTheDocument()
+    expect(screen.getByText(/Research use only/)).toBeInTheDocument()
+  })
+
+  it('successfully loads and renders cohort summary metrics', async () => {
+    renderRoute('/research/cohort')
+    expect(await screen.findByText('Participants')).toBeInTheDocument()
+    expect(screen.getAllByText('400').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText('33')).toBeInTheDocument()
+    expect(screen.getByText(/eps=0\.6 · min=10/)).toBeInTheDocument()
+    expect(screen.getByText(/30\.4%/)).toBeInTheDocument()
+  })
+
+  it('renders PCA 2D scatter plot with points and legend', async () => {
+    renderRoute('/research/cohort')
+    expect(await screen.findByText('PCA 2D Visualization')).toBeInTheDocument()
+    expect(screen.getByText('Noise Outliers (-1)')).toBeInTheDocument()
+    expect(screen.getByText('Principal Component 1 (PC1)')).toBeInTheDocument()
+
+    // 2 circles for the 2 items in cohortProjectionResponse
+    const circles = document.querySelectorAll('circle.cohort-point')
+    expect(circles.length).toBe(2)
+  })
+
+  it('truthfully renders the clusters table with noise details', async () => {
+    renderRoute('/research/cohort')
+    expect(await screen.findByText('Cluster Phenotypes')).toBeInTheDocument()
+    expect(screen.getByText('Noise / Outlier (-1)')).toBeInTheDocument()
+    expect(screen.getByText('100.0%')).toBeInTheDocument()
+  })
+
+  it('supports cluster filtering', async () => {
+    renderRoute('/research/cohort')
+    await screen.findByText('PCA 2D Visualization')
+
+    const filterSelect = screen.getByLabelText(/Cluster Filter:/i)
+    await userEvent.selectOptions(filterSelect, '-1')
+
+    const filteredCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).includes('/research/cohort/projection') && String(url).includes('clusterLabel=-1'),
+    )
+    expect(filteredCall).toBeDefined()
+  })
+
+  it('supports pagination controls', async () => {
+    renderRoute('/research/cohort')
+    await screen.findByText('PCA 2D Visualization')
+
+    const nextBtn = screen.getByRole('button', { name: 'Next page' })
+    await userEvent.click(nextBtn)
+
+    const nextCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).includes('/research/cohort/projection') && String(url).includes('page=2'),
+    )
+    expect(nextCall).toBeDefined()
+  })
+
+  it('submits nearest-neighbor query and displays peer results', async () => {
+    renderRoute('/research/cohort')
+    await screen.findByText('Nearest Peer Discovery')
+
+    const idInput = screen.getByLabelText(/Target Participant UUID/i)
+    await userEvent.clear(idInput)
+    await userEvent.type(idInput, 'bdd640fb-0667-4ad1-9c80-317fa3b1799d')
+
+    const submitBtn = screen.getByRole('button', { name: 'Find Peers' })
+    await userEvent.click(submitBtn)
+
+    expect(await screen.findByText('Rank #1')).toBeInTheDocument()
+    expect(screen.getByText('243191eb-5d9e-4717-bf08-6a9e569db57e')).toBeInTheDocument()
+    expect(screen.getByText('24.432')).toBeInTheDocument()
+    expect(screen.getByText('3.93%')).toBeInTheDocument()
+
+    const nearestCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).includes('/research/cohort/nearest'),
+    )
+    expect(nearestCall).toBeDefined()
+    expect(nearestCall?.[1]?.method).toBe('POST')
+  })
+
+  it('renders backend unavailable error when service fails', async () => {
+    fetchMock = vi.fn((input: string) => {
+      if (input.includes('/research/cohort/health')) {
+        return Promise.resolve(new Response(JSON.stringify({ error: { message: 'Service down', code: 'ML_SERVICE_UNAVAILABLE' } }), { status: 503 }))
+      }
+      return Promise.resolve(json({}))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderRoute('/research/cohort')
+
+    expect(await screen.findByRole('alert', { name: '' })).toBeInTheDocument()
+    expect(screen.getByText('Backend service unavailable')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Retry Connection' })).toBeInTheDocument()
+  })
+
+  it('shows error when nearest neighbor search returns 404', async () => {
+    fetchMock = vi.fn((input: string) => {
+      if (input.includes('/research/cohort/health')) {
+        return Promise.resolve(json(cohortHealthResponse))
+      }
+      if (input.includes('/research/cohort/summary')) {
+        return Promise.resolve(json(cohortSummaryResponse))
+      }
+      if (input.includes('/research/cohort/clusters')) {
+        return Promise.resolve(json(cohortClustersResponse))
+      }
+      if (input.includes('/research/cohort/projection')) {
+        return Promise.resolve(json(cohortProjectionResponse))
+      }
+      if (input.includes('/research/cohort/nearest')) {
+        return Promise.resolve(new Response(JSON.stringify({ error: { message: "Participant not found in cohort index", code: "COHORT_PARTICIPANT_NOT_FOUND" } }), { status: 404 }))
+      }
+      return Promise.resolve(json({}))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderRoute('/research/cohort')
+    await screen.findByText('Nearest Peer Discovery')
+
+    const submitBtn = screen.getByRole('button', { name: 'Find Peers' })
+    await userEvent.click(submitBtn)
+
+    expect(await screen.findByText(/Participant not found in cohort index/)).toBeInTheDocument()
+  })
+
+  it('renders empty projection message when items array is empty', async () => {
+    fetchMock = vi.fn((input: string) => {
+      if (input.includes('/research/cohort/health')) {
+        return Promise.resolve(json(cohortHealthResponse))
+      }
+      if (input.includes('/research/cohort/summary')) {
+        return Promise.resolve(json(cohortSummaryResponse))
+      }
+      if (input.includes('/research/cohort/clusters')) {
+        return Promise.resolve(json(cohortClustersResponse))
+      }
+      if (input.includes('/research/cohort/projection')) {
+        return Promise.resolve(json({ ...cohortProjectionResponse, items: [] }))
+      }
+      return Promise.resolve(json({}))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderRoute('/research/cohort')
+
+    expect(await screen.findByText('No projection points found for current filter.')).toBeInTheDocument()
+    expect(screen.getByText('No participants found matching criteria.')).toBeInTheDocument()
+  })
+
+  it('provides a refresh button that reloads data', async () => {
+    renderRoute('/research/cohort')
+    await screen.findByText('PCA 2D Visualization')
+
+    const refreshBtn = screen.getByRole('button', { name: 'Refresh cohort data' })
+    await userEvent.click(refreshBtn)
+
+    const healthCalls = fetchMock.mock.calls.filter(([url]) =>
+      String(url).includes('/research/cohort/health'),
+    )
+    expect(healthCalls.length).toBeGreaterThanOrEqual(2)
+  })
+})
+
+describe('Phase R8 — ResearchDropoutPage', () => {
+  let fetchMock: ReturnType<typeof vi.fn>
+
+  const dropoutResponse = {
+    dropout_probability: 0.72,
+    predicted_dropout: true,
+    risk_tier: 'high',
+    model_type: 'xgboost',
+    model_version: '1.0.0',
+    predicted_at: '2026-09-18T00:00:00Z',
+    threshold: 0.5,
+    shap_explanation: {
+      base_value: 0.4,
+      predicted_probability: 0.72,
+      top_contributions: [
+        { feature: 'ae_burden_score_pre_cutoff', value: 1.4, shap_value: 0.18, abs_magnitude: 0.18, direction: 'positive' },
+        { feature: 'adherence_ratio_pre_cutoff', value: 0.85, shap_value: -0.11, abs_magnitude: 0.11, direction: 'negative' },
+      ],
+    },
+    note: null,
+  }
+
+  beforeEach(() => {
+    const preferences = new Map<string, string>()
+    vi.stubEnv('VITE_API_BASE_URL', '/api/v1')
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => preferences.get(key) ?? null,
+      setItem: (key: string, value: string) => preferences.set(key, value),
+      removeItem: (key: string) => preferences.delete(key),
+      clear: () => preferences.clear(),
+    })
+    sessionStorage.clear()
+    authenticate()
+  })
+  afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
+
+  it('renders the Dropout Follow-up heading and empty state', async () => {
+    fetchMock = vi.fn(() => Promise.resolve(json({})))
+    vi.stubGlobal('fetch', fetchMock)
+    renderRoute('/research/dropout')
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Dropout Follow-up' }),
+    ).toBeInTheDocument()
+    expect(screen.getAllByText('Not assessed')[0]).toBeInTheDocument()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Assess P-10042' }))
+    expect(await screen.findByText('No prediction yet')).toBeInTheDocument()
+  })
+
+  it('renders the research disclaimer', async () => {
+    fetchMock = vi.fn(() => Promise.resolve(json({})))
+    vi.stubGlobal('fetch', fetchMock)
+    renderRoute('/research/dropout')
+    expect(await screen.findByText(/Research use only/)).toBeInTheDocument()
+  })
+
+  it('renders the XGBoost and Logistic Regression model toggle buttons', async () => {
+    fetchMock = vi.fn(() => Promise.resolve(json({})))
+    vi.stubGlobal('fetch', fetchMock)
+    renderRoute('/research/dropout')
+    await userEvent.click(await screen.findByRole('button', { name: 'Assess P-10042' }))
+    expect(await screen.findByRole('radio', { name: 'XGBoost' })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: 'Logistic Regression' })).toBeInTheDocument()
+  })
+
+  it('renders the predict button', async () => {
+    fetchMock = vi.fn(() => Promise.resolve(json({})))
+    vi.stubGlobal('fetch', fetchMock)
+    renderRoute('/research/dropout')
+    await userEvent.click(await screen.findByRole('button', { name: 'Assess P-10042' }))
+    expect(
+      await screen.findByRole('button', { name: 'Predict dropout risk' }),
+    ).toBeInTheDocument()
+  })
+
+  it('sends the correct POST body on prediction', async () => {
+    fetchMock = vi.fn((input: string, options?: RequestInit) => {
+      if (input.includes('/research/dropout/predict')) {
+        return Promise.resolve(json(dropoutResponse))
+      }
+      return Promise.resolve(json({}))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderRoute('/research/dropout')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Assess P-10042' }))
+    const btn = await screen.findByRole('button', { name: 'Predict dropout risk' })
+    await userEvent.click(btn)
+
+    const predictCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).includes('/research/dropout/predict'),
+    )
+    expect(predictCall).toBeDefined()
+    expect(predictCall?.[1]?.method).toBe('POST')
+    const body = JSON.parse(String(predictCall?.[1]?.body))
+    expect(body.model_type).toBe('xgboost')
+    expect(typeof body.features.age).toBe('number')
+    expect(Object.keys(body.features)).toHaveLength(33)
+  })
+
+  it('renders the prediction result card with probability gauge', async () => {
+    fetchMock = vi.fn((input: string, options?: RequestInit) => {
+      if (input.includes('/research/dropout/predict')) {
+        return Promise.resolve(json(dropoutResponse))
+      }
+      return Promise.resolve(json({}))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderRoute('/research/dropout')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Assess P-10042' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Predict dropout risk' }))
+
+    expect(await screen.findByText('Dropout predicted')).toBeInTheDocument()
+    expect(screen.getByRole('progressbar', { name: 'Dropout probability gauge' })).toBeInTheDocument()
+    expect(screen.getByText('72%')).toBeInTheDocument()
+    expect(screen.getByText('HIGH RISK')).toBeInTheDocument()
+  })
+
+  it('renders SHAP feature attribution for xgboost predictions', async () => {
+    fetchMock = vi.fn((input: string, options?: RequestInit) => {
+      if (input.includes('/research/dropout/predict')) {
+        return Promise.resolve(json(dropoutResponse))
+      }
+      return Promise.resolve(json({}))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderRoute('/research/dropout')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Assess P-10042' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Predict dropout risk' }))
+
+    expect(await screen.findByRole('heading', { name: 'SHAP Feature Attribution' })).toBeInTheDocument()
+    expect(screen.getByText(/ae burden score pre cutoff/)).toBeInTheDocument()
+    expect(screen.getByText(/adherence ratio pre cutoff/)).toBeInTheDocument()
+  })
+
+  it('shows the SHAP XGBoost-only note when logistic regression is selected', async () => {
+    fetchMock = vi.fn(() => Promise.resolve(json({})))
+    vi.stubGlobal('fetch', fetchMock)
+    renderRoute('/research/dropout')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Assess P-10042' }))
+    const lrBtn = await screen.findByRole('radio', { name: 'Logistic Regression' })
+    await userEvent.click(lrBtn)
+
+    expect(
+      screen.getByText(/SHAP TreeExplainer is XGBoost-only/),
+    ).toBeInTheDocument()
+  })
+
+  it('shows an error when the API call fails', async () => {
+    fetchMock = vi.fn((input: string) => {
+      if (input.includes('/research/dropout/predict')) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ error: { message: 'ML service unavailable', code: 'SERVICE_DOWN' } }), { status: 503 }),
+        )
+      }
+      return Promise.resolve(json({}))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderRoute('/research/dropout')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Assess P-10042' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Predict dropout risk' }))
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(screen.getByText(/ML service unavailable/)).toBeInTheDocument()
+  })
+})
+
+describe('Phase R8 — ResearchRagPage', () => {
+  let fetchMock: ReturnType<typeof vi.fn>
+
+  const ingestResponse = {
+    trial_version_id: 'v-rag-1',
+    status: 'INDEXED',
+    chunk_count: 12,
+    corpus_checksum: 'sha256-abc123',
+    indexed_at: '2026-09-18T00:00:00Z',
+    message: 'Trial version indexed successfully.',
+  }
+
+  const retrieveResponse = {
+    trial_version_id: 'v-rag-1',
+    query: 'HbA1c requirement',
+    result_count: 2,
+    results: [
+      {
+        criterion_id: 'cr-1',
+        criterion_type: 'inclusion',
+        source_text: 'HbA1c ≥ 8.0% at screening',
+        relevance_score: 0.91,
+        trial_version_id: 'v-rag-1',
+      },
+      {
+        criterion_id: 'cr-2',
+        criterion_type: 'exclusion',
+        source_text: 'HbA1c > 12% at screening',
+        relevance_score: 0.78,
+        trial_version_id: 'v-rag-1',
+      },
+    ],
+  }
+
+  const explainResponse = {
+    run_id: 'run-1',
+    trial_version_id: 'v-rag-1',
+    query: 'HbA1c requirements',
+    model: 'gemini-pro',
+    status: 'ok',
+    insufficient_evidence: false,
+    summary: 'The trial requires HbA1c between 8.0% and 12.0%.',
+    explanations: [
+      {
+        criterion_id: 'cr-1',
+        criterion_type: 'inclusion',
+        source_text: 'HbA1c ≥ 8.0% at screening',
+        explanation: 'Patients must have HbA1c of at least 8.0% to be eligible.',
+      },
+    ],
+    provenance_valid: true,
+    disclaimer: 'This explanation is for research purposes only.',
+  }
+
+  beforeEach(() => {
+    const preferences = new Map<string, string>()
+    vi.stubEnv('VITE_API_BASE_URL', '/api/v1')
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => preferences.get(key) ?? null,
+      setItem: (key: string, value: string) => preferences.set(key, value),
+      removeItem: (key: string) => preferences.delete(key),
+      clear: () => preferences.clear(),
+    })
+    sessionStorage.clear()
+    fetchMock = vi.fn(() => Promise.resolve(json({})))
+    vi.stubGlobal('fetch', fetchMock)
+    authenticate()
+  })
+  afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
+
+  it('renders the Criteria Knowledge Base heading', async () => {
+    renderRoute('/research/rag')
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Criteria Knowledge Base' }),
+    ).toBeInTheDocument()
+  })
+
+  it('renders the RAG disclaimer', async () => {
+    renderRoute('/research/rag')
+    expect(await screen.findByText(/Research use only/)).toBeInTheDocument()
+  })
+
+  it('renders the trial version ID input', async () => {
+    renderRoute('/research/rag')
+    expect(
+      await screen.findByRole('textbox', { name: /Approved trial version ID/i }),
+    ).toBeInTheDocument()
+  })
+
+  it('renders the Index, Retrieve, and Explain tabs', async () => {
+    renderRoute('/research/rag')
+    expect(await screen.findByRole('tab', { name: 'Index' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Retrieve' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Explain' })).toBeInTheDocument()
+  })
+
+  it('renders the Index tab empty state when no version provided', async () => {
+    renderRoute('/research/rag')
+    expect(
+      await screen.findByRole('button', { name: 'Index trial version' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Not indexed yet/)).toBeInTheDocument()
+  })
+
+  it('sends POST to index endpoint and renders result', async () => {
+    fetchMock = vi.fn((input: string) => {
+      if (input.includes('/research/rag/trials/v-rag-1/index')) {
+        return Promise.resolve(json(ingestResponse))
+      }
+      return Promise.resolve(json({}))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderRoute('/research/rag')
+
+    const versionInput = await screen.findByRole('textbox', { name: /Approved trial version ID/i })
+    await userEvent.type(versionInput, 'v-rag-1')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Index trial version' }))
+
+    expect(await screen.findByText('Trial version indexed successfully.')).toBeInTheDocument()
+    expect(screen.getByText('12 criteria chunks indexed')).toBeInTheDocument()
+
+    const indexCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).includes('/research/rag/trials/v-rag-1/index'),
+    )
+    expect(indexCall).toBeDefined()
+    expect(indexCall?.[1]?.method).toBe('POST')
+  })
+
+  it('shows validation error when index is clicked without a version ID', async () => {
+    renderRoute('/research/rag')
+    await userEvent.click(await screen.findByRole('button', { name: 'Index trial version' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Trial version ID is required.')
+  })
+
+  it('switches to Retrieve tab and renders query form', async () => {
+    renderRoute('/research/rag')
+    await userEvent.click(await screen.findByRole('tab', { name: 'Retrieve' }))
+    expect(await screen.findByRole('button', { name: 'Retrieve criteria' })).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Query' })).toBeInTheDocument()
+  })
+
+  it('sends POST to retrieve endpoint and renders criteria list', async () => {
+    fetchMock = vi.fn((input: string) => {
+      if (input.includes('/research/rag/trials/v-rag-1/retrieve')) {
+        return Promise.resolve(json(retrieveResponse))
+      }
+      return Promise.resolve(json({}))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderRoute('/research/rag')
+
+    const versionInput = await screen.findByRole('textbox', { name: /Approved trial version ID/i })
+    await userEvent.type(versionInput, 'v-rag-1')
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Retrieve' }))
+    await userEvent.type(await screen.findByRole('textbox', { name: 'Query' }), 'HbA1c requirement')
+    await userEvent.click(screen.getByRole('button', { name: 'Retrieve criteria' }))
+
+    expect(await screen.findByText('HbA1c ≥ 8.0% at screening')).toBeInTheDocument()
+    expect(screen.getByText('HbA1c > 12% at screening')).toBeInTheDocument()
+  })
+
+  it('switches to Explain tab and renders query form', async () => {
+    renderRoute('/research/rag')
+    await userEvent.click(await screen.findByRole('tab', { name: 'Explain' }))
+    expect(await screen.findByRole('button', { name: 'Generate explanation' })).toBeInTheDocument()
+  })
+
+  it('sends POST to explain endpoint and renders summary', async () => {
+    fetchMock = vi.fn((input: string) => {
+      if (input.includes('/research/rag/trials/v-rag-1/explain')) {
+        return Promise.resolve(json(explainResponse))
+      }
+      return Promise.resolve(json({}))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderRoute('/research/rag')
+
+    const versionInput = await screen.findByRole('textbox', { name: /Approved trial version ID/i })
+    await userEvent.type(versionInput, 'v-rag-1')
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Explain' }))
+    await userEvent.type(await screen.findByRole('textbox', { name: 'Query' }), 'HbA1c requirements')
+    await userEvent.click(screen.getByRole('button', { name: 'Generate explanation' }))
+
+    expect(await screen.findByText('The trial requires HbA1c between 8.0% and 12.0%.')).toBeInTheDocument()
+    expect(screen.getByText('Provenance ✓')).toBeInTheDocument()
+    expect(screen.getByText('This explanation is for research purposes only.')).toBeInTheDocument()
+  })
+
+  it('shows insufficient evidence state when returned by API', async () => {
+    fetchMock = vi.fn((input: string) => {
+      if (input.includes('/research/rag/trials/v-rag-1/explain')) {
+        return Promise.resolve(json({ ...explainResponse, insufficient_evidence: true, summary: '' }))
+      }
+      return Promise.resolve(json({}))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderRoute('/research/rag')
+
+    const versionInput = await screen.findByRole('textbox', { name: /Approved trial version ID/i })
+    await userEvent.type(versionInput, 'v-rag-1')
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Explain' }))
+    await userEvent.type(await screen.findByRole('textbox', { name: 'Query' }), 'HbA1c requirements')
+    await userEvent.click(screen.getByRole('button', { name: 'Generate explanation' }))
+
+    expect(await screen.findByText(/Insufficient evidence/)).toBeInTheDocument()
+  })
+})

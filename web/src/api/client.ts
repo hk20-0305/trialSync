@@ -364,3 +364,299 @@ export async function apiDownload(
   }
   return response.blob()
 }
+
+// ── Research: Dropout Risk ────────────────────────────────────────────────────
+
+/** The 33 pre-cutoff clinical features expected by the Python ML service via Spring Boot. */
+export type DropoutFeatures = {
+  age: number
+  is_female: number
+  is_experimental_arm: number
+  baseline_health_score: number
+  is_high_travel_burden: number
+  frailty_index: number
+  doses_scheduled_pre_cutoff: number
+  doses_administered_pre_cutoff: number
+  doses_missed_pre_cutoff: number
+  doses_reduced_pre_cutoff: number
+  adherence_ratio_pre_cutoff: number
+  cumulative_dose_mg_pre_cutoff: number
+  visits_scheduled_pre_cutoff: number
+  visits_attended_pre_cutoff: number
+  visits_missed_pre_cutoff: number
+  visit_attendance_rate_pre_cutoff: number
+  ae_count_pre_cutoff: number
+  ae_max_grade_pre_cutoff: number
+  ae_serious_count_pre_cutoff: number
+  ae_burden_score_pre_cutoff: number
+  has_drug_related_ae_pre_cutoff: number
+  measurement_count_pre_cutoff: number
+  abnormal_measurement_count_pre_cutoff: number
+  abnormal_measurement_rate_pre_cutoff: number
+  systolic_bp_baseline: number
+  systolic_bp_latest_pre_cutoff: number
+  systolic_bp_change_pre_cutoff: number
+  platelets_baseline: number
+  platelets_latest_pre_cutoff: number
+  platelets_pct_change_pre_cutoff: number
+  alt_baseline: number
+  alt_latest_pre_cutoff: number
+  alt_elevation_ratio_pre_cutoff: number
+}
+
+export type ShapContribution = {
+  feature: string
+  value: number
+  shap_value: number
+  abs_magnitude: number
+  direction: string
+}
+
+export type ShapExplanation = {
+  base_value: number
+  predicted_probability: number
+  top_contributions: ShapContribution[]
+}
+
+export type DropoutPredictionRequest = {
+  model_type: 'xgboost' | 'logistic_regression'
+  features: DropoutFeatures
+}
+
+export type DropoutPredictionResponse = {
+  dropout_probability: number
+  predicted_dropout: boolean
+  risk_tier: string
+  model_type: string
+  model_version: string
+  predicted_at: string
+  threshold: number
+  shap_explanation: ShapExplanation | null
+  note: string | null
+}
+
+export async function predictDropout(
+  request: DropoutPredictionRequest,
+  token?: string | null,
+): Promise<DropoutPredictionResponse> {
+  return apiRequest<DropoutPredictionResponse>(
+    '/research/dropout/predict',
+    { method: 'POST', body: JSON.stringify(request) },
+    token,
+  )
+}
+
+// ── Research: Trial Criteria RAG ──────────────────────────────────────────────
+
+export type RagIngestResponse = {
+  trial_version_id: string
+  status: string
+  chunk_count: number
+  corpus_checksum: string
+  indexed_at: string
+  message: string
+}
+
+export type RagRetrieveRequest = {
+  query: string
+  top_k?: number
+}
+
+export type RetrievedCriterion = {
+  criterion_id: string
+  criterion_type: string
+  source_text: string
+  relevance_score: number
+  trial_version_id: string
+}
+
+export type RagRetrieveResponse = {
+  trial_version_id: string
+  query: string
+  results: RetrievedCriterion[]
+  result_count: number
+}
+
+export type CriterionExplanation = {
+  criterion_id: string
+  criterion_type: string
+  source_text: string
+  explanation: string
+}
+
+export type RagExplainRequest = {
+  query: string
+  top_k?: number
+}
+
+export type RagExplainResponse = {
+  run_id: string
+  trial_version_id: string
+  query: string
+  model: string
+  status: string
+  insufficient_evidence: boolean
+  summary: string
+  explanations: CriterionExplanation[]
+  provenance_valid: boolean
+  disclaimer: string
+}
+
+export async function ragIndexTrial(
+  versionId: string,
+  token?: string | null,
+): Promise<RagIngestResponse> {
+  return apiRequest<RagIngestResponse>(
+    `/research/rag/trials/${versionId}/index`,
+    { method: 'POST' },
+    token,
+  )
+}
+
+export async function ragRetrieve(
+  versionId: string,
+  request: RagRetrieveRequest,
+  token?: string | null,
+): Promise<RagRetrieveResponse> {
+  return apiRequest<RagRetrieveResponse>(
+    `/research/rag/trials/${versionId}/retrieve`,
+    { method: 'POST', body: JSON.stringify(request) },
+    token,
+  )
+}
+
+export async function ragExplain(
+  versionId: string,
+  request: RagExplainRequest,
+  token?: string | null,
+): Promise<RagExplainResponse> {
+  return apiRequest<RagExplainResponse>(
+    `/research/rag/trials/${versionId}/explain`,
+    { method: 'POST', body: JSON.stringify(request) },
+    token,
+  )
+}
+
+// ── Research: Cohort Atlas (Phase R10) ────────────────────────────────────────
+
+export type CohortHealthResponse = {
+  status: string
+  participant_count: number
+  faiss_total_indexed: number
+  cluster_count: number
+}
+
+export type CohortSummaryResponse = {
+  participant_count: number
+  feature_dimension: number
+  cluster_count: number
+  noise_count: number
+  noise_percentage: number
+  dbscan_parameters: {
+    eps: number
+    min_samples: number
+    metric: string
+    [key: string]: unknown
+  }
+  pca_explained_variance: {
+    explained_variance_ratio: Record<string, number>
+    cumulative_explained_variance: number
+  }
+  artifact_metadata: Record<string, unknown>
+}
+
+export type CohortProjectionItem = {
+  participant_id: string
+  pc1: number
+  pc2: number
+  cluster_label: number
+  is_noise: boolean
+}
+
+export type CohortProjectionPageResponse = {
+  total: number
+  page: number
+  page_size: number
+  total_pages: number
+  cluster_filter: number | null
+  items: CohortProjectionItem[]
+}
+
+export type CohortClusterItem = {
+  cluster_label: number
+  size: number
+  size_pct: number
+  is_noise: boolean
+  means?: Record<string, number>
+}
+
+export type CohortClustersResponse = CohortClusterItem[]
+
+export type CohortNearestRequest = {
+  participant_id: string
+  k?: number
+}
+
+export type CohortNeighborItem = {
+  rank: number
+  participant_id: string
+  faiss_index: number
+  l2_distance: number
+  similarity_score: number
+}
+
+export type CohortNearestResponse = {
+  participant_id: string
+  k: number
+  neighbors: CohortNeighborItem[]
+}
+
+export async function getCohortHealth(
+  token?: string | null,
+): Promise<CohortHealthResponse> {
+  return apiRequest<CohortHealthResponse>('/research/cohort/health', {}, token)
+}
+
+export async function getCohortSummary(
+  token?: string | null,
+): Promise<CohortSummaryResponse> {
+  return apiRequest<CohortSummaryResponse>('/research/cohort/summary', {}, token)
+}
+
+export async function getCohortProjection(
+  page = 1,
+  pageSize = 50,
+  clusterLabel?: number | null,
+  token?: string | null,
+): Promise<CohortProjectionPageResponse> {
+  const params = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  })
+  if (clusterLabel !== undefined && clusterLabel !== null) {
+    params.set('clusterLabel', String(clusterLabel))
+  }
+  return apiRequest<CohortProjectionPageResponse>(
+    `/research/cohort/projection?${params.toString()}`,
+    {},
+    token,
+  )
+}
+
+export async function getCohortClusters(
+  token?: string | null,
+): Promise<CohortClustersResponse> {
+  return apiRequest<CohortClustersResponse>('/research/cohort/clusters', {}, token)
+}
+
+export async function getCohortNearest(
+  request: CohortNearestRequest,
+  token?: string | null,
+): Promise<CohortNearestResponse> {
+  return apiRequest<CohortNearestResponse>(
+    '/research/cohort/nearest',
+    { method: 'POST', body: JSON.stringify(request) },
+    token,
+  )
+}
+

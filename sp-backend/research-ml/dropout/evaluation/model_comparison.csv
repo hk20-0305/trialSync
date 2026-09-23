@@ -1,0 +1,3 @@
+model,auroc,auprc,precision,recall,f1,specificity,brier_score,ece,true_positives,false_positives,true_negatives,false_negatives
+logistic_regression,0.9419,0.9037,0.72,0.8571,0.7826,0.8814,0.0972,0.088,18,7,52,3
+xgboost,0.9629,0.9047,0.7619,0.7619,0.7619,0.9153,0.0775,0.0718,16,5,54,5

@@ -1,0 +1,139 @@
+{
+  "method": "shap.TreeExplainer",
+  "n_background_samples": 400,
+  "base_value": 0.0,
+  "ranking": [
+    {
+      "feature": "alt_latest_pre_cutoff",
+      "mean_abs_shap": 1.14503
+    },
+    {
+      "feature": "visits_attended_pre_cutoff",
+      "mean_abs_shap": 0.39735
+    },
+    {
+      "feature": "doses_missed_pre_cutoff",
+      "mean_abs_shap": 0.37662
+    },
+    {
+      "feature": "age",
+      "mean_abs_shap": 0.22728
+    },
+    {
+      "feature": "frailty_index",
+      "mean_abs_shap": 0.19916
+    },
+    {
+      "feature": "adherence_ratio_pre_cutoff",
+      "mean_abs_shap": 0.18844
+    },
+    {
+      "feature": "platelets_latest_pre_cutoff",
+      "mean_abs_shap": 0.18553
+    },
+    {
+      "feature": "doses_administered_pre_cutoff",
+      "mean_abs_shap": 0.18461
+    },
+    {
+      "feature": "platelets_baseline",
+      "mean_abs_shap": 0.1637
+    },
+    {
+      "feature": "systolic_bp_change_pre_cutoff",
+      "mean_abs_shap": 0.16232
+    },
+    {
+      "feature": "alt_elevation_ratio_pre_cutoff",
+      "mean_abs_shap": 0.15763
+    },
+    {
+      "feature": "visits_scheduled_pre_cutoff",
+      "mean_abs_shap": 0.13402
+    },
+    {
+      "feature": "systolic_bp_baseline",
+      "mean_abs_shap": 0.13089
+    },
+    {
+      "feature": "systolic_bp_latest_pre_cutoff",
+      "mean_abs_shap": 0.12989
+    },
+    {
+      "feature": "baseline_health_score",
+      "mean_abs_shap": 0.11633
+    },
+    {
+      "feature": "cumulative_dose_mg_pre_cutoff",
+      "mean_abs_shap": 0.10932
+    },
+    {
+      "feature": "abnormal_measurement_count_pre_cutoff",
+      "mean_abs_shap": 0.09648
+    },
+    {
+      "feature": "alt_baseline",
+      "mean_abs_shap": 0.08885
+    },
+    {
+      "feature": "platelets_pct_change_pre_cutoff",
+      "mean_abs_shap": 0.07216
+    },
+    {
+      "feature": "ae_max_grade_pre_cutoff",
+      "mean_abs_shap": 0.04779
+    },
+    {
+      "feature": "is_female",
+      "mean_abs_shap": 0.04743
+    },
+    {
+      "feature": "abnormal_measurement_rate_pre_cutoff",
+      "mean_abs_shap": 0.03183
+    },
+    {
+      "feature": "is_high_travel_burden",
+      "mean_abs_shap": 0.02839
+    },
+    {
+      "feature": "is_experimental_arm",
+      "mean_abs_shap": 0.01674
+    },
+    {
+      "feature": "measurement_count_pre_cutoff",
+      "mean_abs_shap": 0.01446
+    },
+    {
+      "feature": "ae_count_pre_cutoff",
+      "mean_abs_shap": 0.01162
+    },
+    {
+      "feature": "doses_scheduled_pre_cutoff",
+      "mean_abs_shap": 0.00981
+    },
+    {
+      "feature": "ae_serious_count_pre_cutoff",
+      "mean_abs_shap": 0.00785
+    },
+    {
+      "feature": "visit_attendance_rate_pre_cutoff",
+      "mean_abs_shap": 0.00469
+    },
+    {
+      "feature": "doses_reduced_pre_cutoff",
+      "mean_abs_shap": 0.00429
+    },
+    {
+      "feature": "ae_burden_score_pre_cutoff",
+      "mean_abs_shap": 0.00314
+    },
+    {
+      "feature": "visits_missed_pre_cutoff",
+      "mean_abs_shap": 0.00241
+    },
+    {
+      "feature": "has_drug_related_ae_pre_cutoff",
+      "mean_abs_shap": 0.001
+    }
+  ]
+}

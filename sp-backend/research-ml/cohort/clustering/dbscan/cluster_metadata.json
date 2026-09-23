@@ -1,0 +1,56 @@
+{
+  "algorithm": "DBSCAN",
+  "hyperparameters": {
+    "eps": 0.6,
+    "min_samples": 10,
+    "metric": "euclidean"
+  },
+  "n_samples": 400,
+  "n_clusters": 0,
+  "n_noise_points": 400,
+  "noise_percentage": 1.0,
+  "cluster_sizes": {
+    "-1": 400
+  },
+  "cluster_profiles": {
+    "noise": {
+      "size": 400,
+      "size_pct": 1.0,
+      "means": {
+        "age": 47.1975,
+        "is_female": 0.51,
+        "is_experimental_arm": 0.63,
+        "baseline_health_score": 70.6122,
+        "is_high_travel_burden": 0.315,
+        "frailty_index": 0.5254,
+        "doses_scheduled_pre_cutoff": 4.94,
+        "doses_administered_pre_cutoff": 4.2075,
+        "doses_missed_pre_cutoff": 0.4775,
+        "doses_reduced_pre_cutoff": 0.255,
+        "adherence_ratio_pre_cutoff": 0.875,
+        "cumulative_dose_mg_pre_cutoff": 352.9375,
+        "visits_scheduled_pre_cutoff": 2.95,
+        "visits_attended_pre_cutoff": 2.8375,
+        "visits_missed_pre_cutoff": 0.1125,
+        "visit_attendance_rate_pre_cutoff": 0.9617,
+        "ae_count_pre_cutoff": 0.2275,
+        "ae_max_grade_pre_cutoff": 0.4775,
+        "ae_serious_count_pre_cutoff": 0.1025,
+        "ae_burden_score_pre_cutoff": 0.5225,
+        "has_drug_related_ae_pre_cutoff": 0.0925,
+        "measurement_count_pre_cutoff": 7.9575,
+        "abnormal_measurement_count_pre_cutoff": 0.345,
+        "abnormal_measurement_rate_pre_cutoff": 0.0435,
+        "systolic_bp_baseline": 127.5445,
+        "systolic_bp_latest_pre_cutoff": 128.1558,
+        "systolic_bp_change_pre_cutoff": 0.6113,
+        "platelets_baseline": 218.696,
+        "platelets_latest_pre_cutoff": 216.6507,
+        "platelets_pct_change_pre_cutoff": 0.9348,
+        "alt_baseline": 34.5193,
+        "alt_latest_pre_cutoff": 36.9075,
+        "alt_elevation_ratio_pre_cutoff": 0.6591
+      }
+    }
+  }
+}

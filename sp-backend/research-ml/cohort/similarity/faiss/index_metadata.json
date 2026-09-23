@@ -1,0 +1,6 @@
+{
+  "index_type": "IndexFlatL2",
+  "metric": "L2_EUCLIDEAN",
+  "dimension": 33,
+  "n_total_indexed": 400
+}

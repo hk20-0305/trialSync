@@ -1,0 +1,42 @@
+{
+  "logistic_regression": {
+    "brier_score": 0.0972,
+    "expected_calibration_error": 0.088,
+    "calibration_curve": {
+      "fraction_of_positives": [
+        0.0426,
+        0.1429,
+        0.0,
+        0.2,
+        0.85
+      ],
+      "mean_predicted_probability": [
+        0.0615,
+        0.2958,
+        0.4331,
+        0.7039,
+        0.9564
+      ]
+    }
+  },
+  "xgboost": {
+    "brier_score": 0.0775,
+    "expected_calibration_error": 0.0718,
+    "calibration_curve": {
+      "fraction_of_positives": [
+        0.0192,
+        0.5,
+        0.6667,
+        0.6,
+        0.8571
+      ],
+      "mean_predicted_probability": [
+        0.0781,
+        0.2924,
+        0.526,
+        0.697,
+        0.8953
+      ]
+    }
+  }
+}

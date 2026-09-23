@@ -1,0 +1,11 @@
+# Pure unit tests never touch a datasource. Integration tests override these values.
+spring:
+  flyway:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: none
+trialsync:
+  environment: test
+  auth-secret: test-secret-that-is-at-least-32-characters-long
+  cors-origins: http://localhost:5173,http://127.0.0.1:5173
