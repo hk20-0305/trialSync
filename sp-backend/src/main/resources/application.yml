@@ -98,9 +98,6 @@ trialsync:
   loinc-username: ${TRIALSYNC_LOINC_USERNAME:}
   loinc-password: ${TRIALSYNC_LOINC_PASSWORD:}
   research:
-    ml-service:
-      url: ${TRIALSYNC_RESEARCH_ML_SERVICE_URL:http://localhost:8001}
-      timeout-seconds: ${TRIALSYNC_RESEARCH_ML_TIMEOUT_SECONDS:10.0}
     rag:
       provider: ${TRIALSYNC_ELIGIBILITY_RAG_PROVIDER:gemini}
       gemini-api-key: ${GEMINI_API_KEY:}

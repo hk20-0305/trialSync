@@ -1,12 +1,68 @@
 # TrialSync
 
-TrialSync is an academic full-stack project for **Clinical Trial Patient Matching and Dropout Prediction**. It combines explainable patient–trial matching with a planned research layer for fixed-horizon dropout-risk modelling, cohort intelligence, and RAG over trial eligibility criteria. The current core connects a deterministic `pass`, `fail`, and `unknown` eligibility engine to immutable patient snapshots, approved trial versions, transactional single/batch screening history, and an evidence-first screening workspace.
+TrialSync is an academic full-stack project for **Clinical Trial Patient Matching**. It connects a deterministic `pass`, `fail`, and `unknown` eligibility engine to immutable patient snapshots, approved trial versions, transactional single/batch screening history, and an evidence-first screening workspace. A RAG + Embeddings + Gemini pipeline retrieves and explains eligibility criteria; the Deterministic Rule Engine makes all final eligibility decisions.
 
-The deterministic matching result is the foundation. The research extension will add separately versioned dropout-risk predictions, scenario analysis, SHAP explanations, DBSCAN/FAISS cohort exploration, and a LangChain/Gemini RAG workflow that retrieves approved trial criteria and generates a structured eligibility summary.
+## Architecture Overview
+
+```
+USER
+ │
+ ├─ Upload Patient PDF + Trial Protocol PDF
+ │
+ ▼
+PDF EXTRACTION  ─────────────────────────────────────────────────────────────
+ PDFBox / pypdf — extract text, page map, quality report
+ │
+ ├─► TRIAL CRITERIA EXTRACTION
+ │     Identify and review eligibility criteria from protocol text
+ │
+ ├─► CHUNKING → EMBEDDINGS → VECTOR STORE
+ │     all-MiniLM-L6-v2 embeddings via LangChain4j, stored in-memory
+ │
+ ├─► RAG RETRIEVAL
+ │     Vector-similarity search scoped to the approved trial version
+ │
+ ├─► GEMINI / LLM
+ │     Explains criteria and assists structured fact extraction
+ │     ⚠ LLM never makes the final eligibility decision
+ │
+ ├─► PATIENT FACTS
+ │     Structured: age, condition, lab values, medications, etc.
+ │
+ └─► DETERMINISTIC RULE ENGINE
+       TRUE / FALSE / UNKNOWN — per criterion
+       ▼
+ FINAL RESULT
+       Potentially Eligible | Likely Ineligible | Needs Review
+```
+
+### Cardinal Invariant
+
+> **RAG + Embeddings + Gemini = retrieve and explain information.**
+>
+> **Deterministic Rule Engine = makes the final eligibility decision.**
+>
+> **The LLM must never override or change the deterministic eligibility result.**
+
+### Technology Stack
+
+| Layer         | Technology                                      |
+|---------------|-------------------------------------------------|
+| Frontend      | React 19 + TypeScript + Vite                    |
+| Backend       | Java 21 + Spring Boot 3.3                       |
+| Database      | PostgreSQL 17                                   |
+| Auth          | JWT (PBKDF2 password hashing)                   |
+| PDF           | Apache PDFBox (Java) / pypdf (Python)           |
+| Embeddings    | all-MiniLM-L6-v2 (LangChain4j, local)          |
+| LLM           | Google Gemini 1.5 Flash via LangChain4j         |
+| RAG           | LangChain4j Embedding Store + Gemini            |
+| Rule Engine   | Deterministic DSL v1.0 (pure Java)              |
+| Migrations    | Flyway (Java) / Alembic (Python)                |
 
 ## Prerequisites
 
-- Python 3.12 or newer
+- Python 3.12 or newer (for the Python backend)
+- Java 21 or newer (for the Spring Boot backend)
 - Node.js 20.19 or newer and npm
 - Docker Engine with Docker Compose
 - Tesseract OCR and Poppler (`tesseract-ocr` and `poppler-utils` on Debian/Ubuntu)
@@ -28,7 +84,7 @@ docker compose config --quiet
 docker compose up -d --wait db
 ```
 
-Create the backend environment, install the pinned project dependencies, and apply migrations:
+Create the Python backend environment, install the pinned project dependencies, and apply migrations:
 
 ```bash
 python3 -m venv backend/.venv
@@ -47,10 +103,16 @@ npm --prefix web ci
 
 Use two terminals from the repository root.
 
-Backend:
+Backend (Python/FastAPI):
 
 ```bash
 backend/.venv/bin/uvicorn trialsync.main:create_app --factory --app-dir backend/src --reload
+```
+
+Backend (Java/Spring Boot — alternative):
+
+```bash
+cd sp-backend && mvn spring-boot:run
 ```
 
 Frontend:
@@ -86,69 +148,17 @@ The browser API base URL comes from `VITE_API_BASE_URL` in the root `.env`; back
 
 The current workspace supports the evidence-backed matching workflow:
 
+- Upload or import a Patient PDF and Trial Protocol PDF; text is extracted and reviewed before approval.
 - Match a patient against trial criteria and inspect the evidence behind every result.
 - Identify missing facts that block a confident match and preserve immutable screening evidence.
 - Review imported synthetic text or PDFs before approving structured facts and criteria.
+- Internal RAG + Embeddings pipeline retrieves relevant trial criteria via vector similarity to assist eligibility understanding (eligibility decisions remain strictly deterministic).
 - Ask evidence-grounded questions about one stored screening without changing its outcome.
-- Download a canonical, provider-free PDF report for any saved screening; it is assembled from
-  the stored snapshot, approved trial version, and persisted criterion evaluations.
-
-## Planned research extension
-
-The approved research roadmap is not yet implemented in the running application. It proposes an
-audited statistical/synthetic longitudinal generator, optional NVIDIA NeMo Data Designer
-orchestration, separately versioned fixed-horizon dropout-risk predictions, scenario analysis,
-SHAP explanations, DBSCAN/FAISS cohort exploration, and a LangChain/Gemini eligibility-criteria
-workflow. The public NCT02054715-D1 dictionary and paper can inform a separate study-specific
-adapter, but the participant rows are not currently publicly downloadable or present in NCI's
-current dbGaP availability list. A real-data benchmark remains optional if those rows later become
-legitimately accessible; it is not a public-demo or clean-setup dependency. These
-research outputs will remain separate from the deterministic eligibility result.
-
-The public application, repository, automated tests, and demo are synthetic-data-only. A future
-offline benchmark may use NCT02054715-D1 if its participant rows become legitimately accessible
-under the source terms, and will never become a public runtime dependency. Eligibility is a reproducible rule-based matching
-outcome; optional AI-assisted extraction and explanations never determine it.
-
-## Production deployment
-
-The development `compose.yaml` intentionally runs only PostgreSQL. The full
-production stack is defined in `compose.prod.yaml`: Nginx serves the compiled
-frontend and proxies the API at the same origin, PostgreSQL remains private to
-Compose, and only `127.0.0.1:8081` is published for Cloudflare Tunnel. See
-[`agent-docs/DEPLOYMENT.md`](agent-docs/DEPLOYMENT.md) for first deployment, migrations, backup,
-restore, upgrades, and the required `trialsync.atuls.me` tunnel origin.
-
-GitHub Actions CI is defined in `.github/workflows/ci.yml` and runs the same backend/frontend
-verification gate plus credential-free container builds. Automated CD is intentionally deferred;
-manual deployment remains `git pull --ff-only` followed by the health-checked Compose rollout.
-
-## Core workflow
-
-1. Register a demo account at `/register` or sign in at `/login`.
-2. Search fictional patients at `/patients` or use **Add patient** for the focused creation flow, then open one to record conditions, medications, observations, and demographics.
-3. Search fictional trials at `/trials` or use **Add trial**, then open one, choose **Edit criteria**, and save the current inclusion and exclusion criteria.
-
-All patient and trial queries are scoped to the authenticated owner. List endpoints are intentionally limited to 100 records for the semester demo. Only synthetic data may be entered.
-
-Patient and trial references are generated by the server when `external_id` or
-`registry_id` is omitted. An exact case-insensitive patient-name match returns
-`PATIENT_NAME_REVIEW_REQUIRED`; resubmit with `confirm_duplicate_name: true` only
-after confirming it represents a distinct synthetic person. Detail pages provide
-confirmed delete actions. Patient deletion preserves immutable screening snapshots,
-while trials referenced by screening history remain protected from deletion.
+- Download a canonical, provider-free PDF report for any saved screening; it is assembled from the stored snapshot, approved trial version, and persisted criterion evaluations.
 
 ## Deterministic eligibility engine
 
-The pure package at `backend/src/trialsync/domain` evaluates immutable typed inputs without importing FastAPI, SQLAlchemy, PostgreSQL drivers, hosted providers, ML packages, or the system clock. Callers supply the screening date explicitly:
-
-```python
-from trialsync.domain import screen
-
-result = screen(patient_snapshot, approved_trial_version, screening_context)
-```
-
-The versioned `1.0` rule DSL supports:
+The core screening engine evaluates immutable typed inputs without importing any hosted provider, ML package, or external model. Callers supply the screening date explicitly. The versioned `1.0` rule DSL supports:
 
 - `and`, `or`, and `not` with three-valued logic.
 - `present`, `absent`, `concept_is`, and `concept_in`.
@@ -156,7 +166,11 @@ The versioned `1.0` rule DSL supports:
 - `current` and `within_before` temporal wrappers.
 - `latest` and `any` numeric selection.
 
-Missing, stale, conflicting, unsupported, or unit-incompatible evidence returns `unknown`; it never silently passes. Inclusion and exclusion criteria share the same raw truth evaluation but convert truth to results according to criterion kind. Any required failure produces `likely_ineligible`, all required passes produce `potentially_eligible`, and every other required-result combination produces `needs_review`.
+Missing, stale, conflicting, unsupported, or unit-incompatible evidence returns `unknown`; it never silently passes. Inclusion and exclusion criteria share the same raw truth evaluation but convert truth to results according to criterion kind:
+
+- Any required **`FALSE`** → `likely_ineligible`
+- All required **`TRUE`** → `potentially_eligible`
+- Otherwise → `needs_review`
 
 The API uses JSON bearer-token authentication:
 
@@ -206,40 +220,27 @@ POST               /api/v1/imports/{import_id}/approve
 GET                /api/v1/screenings/{screening_id}/conversation
 POST               /api/v1/screenings/{screening_id}/conversation/messages
 DELETE             /api/v1/screenings/{screening_id}/conversation
+
+POST               /api/v1/research/rag/trials/{version_id}/index
+POST               /api/v1/research/rag/trials/{version_id}/retrieve
+POST               /api/v1/research/rag/trials/{version_id}/explain
 ```
 
-The authenticated patient-fact catalog is a PostgreSQL-backed semantic source for
-routine clinical-detail and trial-criterion entry. It is seeded with the demo
-catalog during migration and returned to the client for searchable, dynamic
-controls rather than being hard-coded into either form. Fact creation accepts a catalog key plus a tagged
-`status`, `pregnancy_status`, or `numeric` value; fact updates accept the tagged
-value and the loaded fact revision. The server derives canonical concept codes,
-fact types, fixed units, and source labels rather than accepting those fields
-from the routine client. Details that are not in the catalog can be retained as
-separate review items, but they are never patient facts or screening evidence.
-Pregnancy status is also checked against the recorded biological sex: a Male and
-Pregnant combination is blocked by the API, while Pregnant with biological sex
-not recorded is allowed with a review warning. Patient reads expose stable
-`consistency_issues` so legacy conflicts remain visible and resolvable; TrialSync
-never infers pregnancy absence or rewrites either value automatically.
+## RAG + Embeddings + Gemini (Criteria Knowledge Base)
 
-See [Clinical Catalog Management](agent-docs/clinical-catalog-management.md) for
-the database schema, administrator lifecycle, optional RxNorm/LOINC suggestions,
-configuration, safety boundaries, and the staged follow-up plan.
+The Criteria Knowledge Base pipeline:
 
-The trial workspace likewise uses the same catalog for guided demographic,
-condition, medication, and observation criteria. Routine users work with one
-current protocol: **Edit criteria**, make the changes, then **Save protocol**.
-The implementation retains immutable internal copies so saved screenings stay
-reproducible, but it does not expose draft, revision, ordering, or protocol-history
-controls in routine UI. Unsupported criterion wording can be saved for mapping
-review, but blocks saving until it is mapped to a supported rule or removed.
+1. **Ingest**: An approved trial version is chunked (per criterion) and embedded using `all-MiniLM-L6-v2` via LangChain4j. Embeddings are stored in an in-memory vector store scoped to the trial version.
+2. **Retrieve**: A patient-context query is embedded and compared against stored criteria using vector similarity. The top-K most relevant criteria are returned with provenance metadata.
+3. **Explain**: The retrieved criteria and patient context are sent to Gemini 1.5 Flash with strict constraints: it must explain what each criterion requires, it must cite criterion IDs, and it **must not** make an eligibility decision.
+
+Only approved trial versions may be indexed. Provenance is validated on every explanation. If Gemini is unavailable, retrieval continues without explanation. The deterministic screening engine remains available independently of Gemini.
 
 ## Saved screening history
 
 `POST /api/v1/screenings` accepts a user-owned `patient_id`, an approved
 `trial_version_id`, and an optional ISO screening date. It creates or reuses an
-immutable patient snapshot, runs the same pure Phase 3 engine, and stores every
+immutable patient snapshot, runs the deterministic engine, and stores every
 criterion result, evidence reference, rejected evidence item, missing-information
 requirement, and version field in one transaction.
 
@@ -257,24 +258,6 @@ engine version, and the whole batch rolls back on unexpected persistence failure
 The response includes state totals, the total unknown-criterion count, and a normal
 evidence-backed screening ID for every matrix cell.
 
-## Screening workspace
-
-After creating structured synthetic patients and approving a trial version, use the
-workspace dashboard to run a single screening. The result page shows the immutable
-patient snapshot, approved trial version, every criterion's stored source text,
-canonical explanation, supporting evidence, and missing information. Unknown
-criteria are shown first. **Download report** produces a canonical PDF from that
-same saved screening; it does not call an LLM or recalculate eligibility. The PDF
-includes report schema/template versions and a generation timestamp, so the source
-screening remains the authority while the downloaded artifact is easy to identify.
-
-`/screenings` provides searchable, filterable history. `/batches/new` lists all
-current patients and all trials, clearly disabling trials that have no approved
-version. It previews the bounded Cartesian pair count and creates a synchronous
-batch. Each batch matrix cell links back to the ordinary evidence-rich screening
-detail page. The UI is educational and uses synthetic data only; it does not provide
-medical advice or enrollment guidance.
-
 ## Reviewed imports
 
 Patient and trial list pages link to a review-first import flow for pasted text and
@@ -289,15 +272,7 @@ explicitly and manual entry remains available.
 Deterministic parsing proposes profile fields, patient facts, trial criteria, and a
 small supported subset of rule structures. Every candidate remains editable and
 unapproved, with page and character-span provenance, until the authenticated owner
-explicitly approves the review. Patient candidates are matched against the same active
-clinical catalog used by manual entry: canonical concepts and fixed units are applied
-only after review, while unmatched or incomplete candidates become review-only
-unsupported details with visible warnings rather than screening evidence. Patient
-approval creates current structured facts and patient activity events.
-Trial approval opens the current criteria for editing and then saves the protocol
-through the same simple workflow used by manual authoring. Unsupported criterion prose stays visible for manual review
-and is never silently converted into an eligibility rule. No hosted NLP provider is
-used in this phase.
+explicitly approves the review.
 
 ## Bounded NLP and explanation conversation
 
@@ -311,47 +286,10 @@ candidates and record the provider transition in review metadata.
 Saved screening details include a short explanation conversation scoped to that one
 authenticated result. The server reloads authoritative evaluations every turn,
 validates criterion/evaluation/evidence citations, persists at most the latest 10
-messages, and supports chat-only clearing. Previous messages are continuity context,
-never patient facts or screening evidence. Advice, diagnosis, enrollment guidance,
+messages, and supports chat-only clearing. Advice, diagnosis, enrollment guidance,
 cross-record requests, unsupported questions, and prompt injection fail safely.
 Canonical explanations and deterministic screening remain available during every
 provider failure and cannot be modified through the assistant.
-
-The conversation UI keeps a stable internally scrolling transcript, shows the submitted
-question and an accessible typing indicator immediately, and supports Enter to send or
-Shift+Enter for a new line. Suggestions are evenly arranged, locally deduplicated, and
-topic-bounded. Focus returns to the composer after a response or recoverable error;
-citation links focus the referenced criterion and provide a visible route back to the
-assistant. Confirmed provider failures preserve the question and expose an explicit retry;
-ambiguous connection failures require reloading history first to avoid duplicate
-persistence. Server logs
-record privacy-safe chat latency, provider/model/prompt version, validation outcome, answer
-state, and citation count without recording question text, document text, raw provider
-payloads, or secrets.
-
-The default hosted model is configurable through `TRIALSYNC_GROQ_MODEL`. As verified
-in the official [Groq supported-model list](https://console.groq.com/docs/models) and
-[structured-output guide](https://console.groq.com/docs/structured-outputs) on
-2026-07-29, `openai/gpt-oss-20b` is a production model supporting strict JSON-schema
-output. Set `TRIALSYNC_EXTRACTION_PROVIDER` to `auto`, `rule_based`, `groq`, or
-`disabled`; set `TRIALSYNC_SCREENING_CHAT_PROVIDER` to `auto`, `canonical`, `groq`,
-or `disabled`. Never send real patient data. The held-out synthetic evaluation and
-its live-provider limitations are documented in
-`backend/evaluation/PHASE7_EVALUATION.md`.
-
-Catalog administrators can optionally ask for terminology suggestions while adding
-a local detail. Medication suggestions use RxNav's active approximate-match API;
-observation suggestions use LOINC's Search API when
-`TRIALSYNC_LOINC_USERNAME` and `TRIALSYNC_LOINC_PASSWORD` are configured. A free LOINC website
-login supplies those two values; there is no separate API key for this Search API integration.
-LOINC uses HTTP Basic Authentication and currently describes the Search API as a pilot, so the app
-treats both sources as best-effort lookup only. See the official
-[LOINC API authentication guidance](https://loinc.org/kb/api/auth). A suggestion never creates,
-changes, or screens a concept
-on its own: the administrator must select it, review the populated fields, and
-save the local concept. Selected RxNorm/LOINC code provenance is stored on that
-local concept. Set `TRIALSYNC_TERMINOLOGY_SUGGESTIONS_ENABLED=false` to disable
-external lookup entirely.
 
 ## Reproducible demo and evaluation
 
@@ -378,37 +316,15 @@ Reset only this fixed account with:
 make reset-demo
 ```
 
-For a larger controlled workspace, keep the demo account, remove every other
-local user, and create the admin workspace with 20 fully populated patient
-records, 15 approved trials (five inclusion and five exclusion criteria per
-trial), and 300 saved screening results: 40% potentially eligible, 40% likely
-ineligible, and 20% needs review.
+## Production deployment
 
-```bash
-backend/.venv/bin/python -m trialsync.demo seed-admin
-```
+The development `compose.yaml` intentionally runs only PostgreSQL. The full
+production stack is defined in `compose.prod.yaml`. See
+[`agent-docs/DEPLOYMENT.md`](agent-docs/DEPLOYMENT.md) for first deployment, migrations, backup,
+restore, upgrades, and the required tunnel configuration.
 
-Sign in as `admin@trialsync.example` with `AdminWorkspace2026!`.
-That account also receives the **Catalog** navigation item. It can add local
-conditions, medications, and fixed-unit observations, choose whether they are
-available for trial criteria, and retire or restore them. Retiring a concept only
-stops new entry; it never rewrites saved facts, criteria, or screening evidence.
-
-The `/help` route summarizes the supported workflow, data boundary, and keyboard
-shortcuts. Reproduce the machine-readable measurements with `make evaluate`; the
-detailed results and live-provider limitations are in
-`backend/evaluation/PHASE8_EVALUATION.md`. Extraction measurements describe
-reviewable candidate structures, never eligibility confidence.
-
-The six critical browser journeys use installed system Chromium and local ports 8002
-and 5175:
-
-```bash
-make test-e2e
-```
-
-The preparation step reseeds the fixed demo account and writes a generated,
-machine-readable synthetic PDF to `/tmp`; it does not use Groq or the network.
+GitHub Actions CI is defined in `.github/workflows/ci.yml` and runs the same backend/frontend
+verification gate plus credential-free container builds.
 
 ## Verification
 
@@ -418,21 +334,17 @@ from the repository root:
 ```bash
 docker compose up -d --wait db
 make verify
-make audit
 ```
 
 `make verify-backend` and `make verify-frontend` provide narrower full-suite gates.
-`make audit` checks installed Python packages and the locked npm tree against current
-advisory data, so it requires network access.
 
-The backend import is intentionally side-effect free: it does not connect to PostgreSQL, create tables, or load models. Schema changes are made only through Alembic.
+The backend import is intentionally side-effect free: it does not connect to PostgreSQL, create tables, or load models. Schema changes are made only through Flyway / Alembic.
 
 ## Current scope
 
 The implemented application covers owner-scoped synthetic patient and trial records, deterministic
 single and batch screening, reviewed text/PDF imports, bounded Groq-assisted candidate extraction,
-and evidence-grounded screening conversations. The research extension described above remains
-planned and is not represented as a current product capability.
+evidence-grounded screening conversations, and internal criteria RAG retrieval with embeddings.
 
 This is an educational prototype, not a medical device, clinical decision system, or production hospital service.
 

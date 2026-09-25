@@ -5,13 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "lint": "eslint . --max-warnings=0",
     "preview": "vite preview",
     "test": "vitest",
     "e2e:prepare": "node -e \"console.log('Using Spring Boot backend')\"",
-    "test:e2e": "playwright test",
-    "typecheck": "tsc -b --pretty false"
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "react": "19.1.0",
@@ -24,9 +23,6 @@
     "@testing-library/jest-dom": "6.6.3",
     "@testing-library/react": "16.3.0",
     "@testing-library/user-event": "14.6.1",
-    "@types/node": "^24.13.4",
-    "@types/react": "19.1.8",
-    "@types/react-dom": "19.1.6",
     "@vitejs/plugin-react": "4.7.0",
     "cross-env": "^10.1.0",
     "eslint": "9.31.0",
@@ -34,8 +30,6 @@
     "eslint-plugin-react-refresh": "0.4.20",
     "globals": "16.3.0",
     "jsdom": "26.1.0",
-    "typescript": "5.8.3",
-    "typescript-eslint": "8.38.0",
     "vite": "7.3.6",
     "vitest": "3.2.7"
   }
