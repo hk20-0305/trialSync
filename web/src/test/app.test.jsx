@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { routes } from '../app/router';
+import { ThemeProvider } from '../app/ThemeContext';
 import { AuthProvider } from '../auth/AuthContext';
 import { ToastProvider } from '../components/ToastProvider';
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
@@ -154,11 +155,13 @@ const conversation = {
         }],
 };
 function renderRoute(initialPath = '/') {
-    return render(<AuthProvider>
-      <ToastProvider>
-        <RouterProvider router={createMemoryRouter(routes, { initialEntries: [initialPath] })}/>
-      </ToastProvider>
-    </AuthProvider>);
+    return render(<ThemeProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <RouterProvider router={createMemoryRouter(routes, { initialEntries: [initialPath] })}/>
+        </ToastProvider>
+      </AuthProvider>
+    </ThemeProvider>);
 }
 function authenticate(isCatalogAdmin = false) {
     sessionStorage.setItem('trialsync_access_token', 'test-token');
@@ -196,6 +199,11 @@ describe('TrialSync Phase 5 screening workflow', () => {
         expect(screen.getByLabelText('Password')).toHaveValue('SyntheticDemo123!');
         expect(screen.getByText('Fills synthetic demonstration credentials')).toBeInTheDocument();
     });
+    it('shows empty email and password fields on a fresh login page load', () => {
+        renderRoute('/login');
+        expect(screen.getByRole('textbox', { name: 'Email' })).toHaveValue('');
+        expect(screen.getByLabelText('Password')).toHaveValue('');
+    });
     it('reveals and hides the login password without changing its value', async () => {
         renderRoute('/login');
         const password = screen.getByLabelText('Password');
@@ -208,28 +216,75 @@ describe('TrialSync Phase 5 screening workflow', () => {
         await userEvent.click(screen.getByRole('button', { name: 'Hide password' }));
         expect(password).toHaveAttribute('type', 'password');
     });
-    it('collapses the navigation, persists the preference, and keeps sign out in the sidebar', async () => {
+    it('collapses the navigation, persists the preference, and keeps sign out in the account menu', async () => {
         authenticate();
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json([])));
         const { container } = renderRoute('/');
         await screen.findByText('No saved screenings');
-        const sidebar = screen.getByRole('complementary', { name: 'Primary navigation' });
-        expect(sidebar).toContainElement(screen.getByRole('button', { name: 'Sign out' }));
+        await userEvent.click(screen.getByRole('button', { name: /account menu/i }));
+        expect(screen.getByRole('menuitem', { name: 'Sign out' })).toBeInTheDocument();
         await userEvent.click(screen.getByRole('button', { name: 'Collapse navigation' }));
         expect(container.querySelector('.app-shell')).toHaveClass('sidebar-collapsed');
         expect(localStorage.getItem('trialsync_sidebar_collapsed')).toBe('true');
         expect(screen.getByRole('button', { name: 'Expand navigation' })).toBeInTheDocument();
     });
-    it('uses the single light theme and removes the legacy preference', async () => {
+    it('toggles theme between light and dark using the compact header button and persists globally', async () => {
         authenticate();
-        localStorage.setItem('trialsync_theme', 'dark');
-        document.documentElement.dataset.theme = 'dark';
+        localStorage.setItem('trialsync_theme', 'light');
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json([])));
         renderRoute('/');
         await screen.findByText('No saved screenings');
-        await waitFor(() => expect(document.documentElement).not.toHaveAttribute('data-theme'));
-        expect(localStorage.getItem('trialsync_theme')).toBeNull();
-        expect(screen.queryByRole('button', { name: /mode/i })).not.toBeInTheDocument();
+        await waitFor(() => expect(document.documentElement).toHaveAttribute('data-theme', 'light'));
+
+        const themeToggle = screen.getByRole('button', { name: /switch to dark mode/i });
+        await userEvent.click(themeToggle);
+        await waitFor(() => expect(document.documentElement).toHaveAttribute('data-theme', 'dark'));
+        expect(localStorage.getItem('trialsync_theme')).toBe('dark');
+
+        const switchLight = screen.getByRole('button', { name: /switch to light mode/i });
+        await userEvent.click(switchLight);
+        await waitFor(() => expect(document.documentElement).toHaveAttribute('data-theme', 'light'));
+        expect(localStorage.getItem('trialsync_theme')).toBe('light');
+    });
+    it('preserves dark theme from localStorage on the login page', async () => {
+        localStorage.setItem('trialsync_theme', 'dark');
+        renderRoute('/login');
+        await waitFor(() => expect(document.documentElement).toHaveAttribute('data-theme', 'dark'));
+    });
+    it('restores theme from localStorage after page load or refresh', async () => {
+        localStorage.setItem('trialsync_theme', 'dark');
+        renderRoute('/');
+        await waitFor(() => expect(document.documentElement).toHaveAttribute('data-theme', 'dark'));
+    });
+    it('opens profile dropdown and displays user name, email, and Sign out', async () => {
+        authenticate();
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json([])));
+        renderRoute('/');
+        await screen.findByText('No saved screenings');
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+        await userEvent.click(screen.getByRole('button', { name: /account menu/i }));
+        const menu = screen.getByRole('menu');
+        expect(menu).toBeInTheDocument();
+        expect(within(menu).getByText('Demo User')).toBeInTheDocument();
+        expect(within(menu).getByText('demo@example.com')).toBeInTheDocument();
+        expect(within(menu).getByRole('menuitem', { name: 'Sign out' })).toBeInTheDocument();
+    });
+    it('signs out, navigates to login with empty credentials, and preserves active theme', async () => {
+        authenticate();
+        localStorage.setItem('trialsync_theme', 'dark');
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json([])));
+        renderRoute('/');
+        await screen.findByText('No saved screenings');
+        await waitFor(() => expect(document.documentElement).toHaveAttribute('data-theme', 'dark'));
+
+        await userEvent.click(screen.getByRole('button', { name: /account menu/i }));
+        await userEvent.click(screen.getByRole('menuitem', { name: 'Sign out' }));
+
+        await waitFor(() => expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument());
+        expect(screen.getByRole('textbox', { name: 'Email' })).toHaveValue('');
+        expect(screen.getByLabelText('Password')).toHaveValue('');
+        expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+        expect(localStorage.getItem('trialsync_theme')).toBe('dark');
     });
     it('shows the Help documentation and active navigation', () => {
         authenticate();

@@ -269,6 +269,33 @@ button:disabled {
 .account-popover a:hover,
 .account-popover button:hover { color: var(--brand-dark); background: var(--surface-tint); }
 
+.dropdown-signout-btn {
+  display: flex;
+  width: 100%;
+  min-height: 38px;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 9px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.dropdown-signout-btn:hover {
+  color: var(--brand-dark);
+  background: var(--surface-tint);
+}
+
+.account-arrow {
+  display: inline-block;
+  font-size: 10px;
+  color: var(--muted);
+}
+
 /* Account trigger button in topbar */
 .account-trigger {
   display: flex;
@@ -554,7 +581,7 @@ button:disabled {
   border-color: var(--line);
 }
 [data-theme="dark"] .auth-intro {
-  background: linear-gradient(145deg, #14282c, #0f1517);
+  background: linear-gradient(155deg, #0e373b 0%, #071f22 100%);
 }
 [data-theme="dark"] .data-boundary {
   background: #231f17;
@@ -868,23 +895,41 @@ h2 {
 }
 
 .auth-intro {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   padding: 56px;
-  background: linear-gradient(145deg, #e4f0ea, #f9fbf9);
+  background: linear-gradient(155deg, #134e54 0%, #0c3337 100%);
+  color: #ffffff;
 }
 
-.auth-intro .brand-mark {
-  margin-bottom: 56px;
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
 }
 
-.auth-intro h1 {
-  margin-top: 18px;
-  font-size: clamp(32px, 4vw, 50px);
+.auth-brand .brand-mark {
+  margin-bottom: 0;
 }
 
-.auth-intro > p:last-child,
-.page-heading p {
-  color: var(--muted);
-  line-height: 1.65;
+.auth-brand .brand-mark i {
+  background: #ffffff;
+}
+
+.auth-brand-title {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.auth-brand-tagline {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
 }
 
 .auth-form,

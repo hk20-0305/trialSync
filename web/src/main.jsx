@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
 import { router } from './app/router';
 import { AuthProvider } from './auth/AuthContext';
+import { ThemeProvider } from './app/ThemeContext';
 import { ToastProvider } from './components/ToastProvider';
 import './styles.css';
 const rootElement = document.getElementById('root');
@@ -10,9 +11,11 @@ if (!rootElement) {
     throw new Error('TrialSync root element was not found');
 }
 createRoot(rootElement).render(<StrictMode>
-    <AuthProvider>
-      <ToastProvider>
-        <RouterProvider router={router}/>
-      </ToastProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <RouterProvider router={router}/>
+        </ToastProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </StrictMode>);

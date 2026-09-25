@@ -46,6 +46,9 @@ class DemoSeedTest extends BaseIntegrationTest {
     @Autowired
     private ScreeningChatMessageRepository chatMessageRepository;
 
+    @Autowired
+    private com.trialsync.backend.repository.ClinicalConceptRepository clinicalConceptRepository;
+
     @Test
     void testDemoSeedIsReproducibleAndProducesExactMixedOutcomes() {
         // First run
@@ -58,9 +61,15 @@ class DemoSeedTest extends BaseIntegrationTest {
         assertEquals(4, first.needsReview());
         assertEquals(8, first.chatMessages());
 
+        assertEquals(2L, userRepository.count());
+        assertEquals(25L, clinicalConceptRepository.count());
+
         User user = userRepository.findByEmail(DemoSeedService.DEMO_EMAIL).orElse(null);
         assertNotNull(user);
         UUID originalUserId = user.getId();
+
+        User e2eUser = userRepository.findByEmail(DemoSeedService.E2E_EMAIL).orElse(null);
+        assertNotNull(e2eUser);
 
         // Check patients
         List<Patient> patients = patientRepository.findTop100ByOwnerIdOrderByUpdatedAtDesc(originalUserId);

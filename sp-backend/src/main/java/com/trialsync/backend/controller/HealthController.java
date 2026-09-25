@@ -39,7 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class HealthController {
 
     /** Version of the newest Flyway migration this build requires. See the class comment. */
-    static final String EXPECTED_SCHEMA_VERSION = "20260802.0014";
+    static final String EXPECTED_SCHEMA_VERSION = "20260802.0017";
 
     private static final String LATEST_APPLIED_VERSION =
             """

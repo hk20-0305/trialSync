@@ -3,7 +3,10 @@ spring:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
-    baseline-version: "20260802.0013"
+    # baseline-version="0" ensures V20260802_0012 (schema) and V20260802_0013
+    # (clinical concepts seed) always execute on a completely fresh database.
+    # All migrations are idempotent (IF NOT EXISTS / ON CONFLICT DO NOTHING).
+    baseline-version: "0"
     validate-on-migrate: false
   jpa:
     open-in-view: false

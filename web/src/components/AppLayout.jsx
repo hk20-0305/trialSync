@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { useTheme } from '../app/ThemeContext';
 
 const SIDEBAR_KEY = 'trialsync_sidebar_collapsed';
-const THEME_KEY = 'trialsync_theme';
 
 const navItems = [
     { to: '/', label: 'Overview', glyph: 'W', end: true },
@@ -22,44 +22,35 @@ function initialSidebarState() {
     }
 }
 
-function initialThemeState() {
-    try {
-        const saved = localStorage.getItem(THEME_KEY);
-        if (saved === 'dark' || saved === 'light') return saved;
-        if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) return 'dark';
-    }
-    catch {
-        // fallback
-    }
-    return 'light';
-}
-
 function initials(name) {
     return (name ?? 'TrialSync').split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
 }
 
 export function AppLayout() {
     const { user, logout } = useAuth();
+    const { theme, setTheme } = useTheme();
     const [collapsed, setCollapsed] = useState(initialSidebarState);
-    const [theme, setTheme] = useState(initialThemeState);
-    const [sliderOpen, setSliderOpen] = useState(false);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
-        document.documentElement.dataset.theme = theme;
-        try {
-            localStorage.setItem(THEME_KEY, theme);
-        }
-        catch { /* optional theme preference */ }
-    }, [theme]);
-
-    useEffect(() => {
-        if (!sliderOpen) return;
-        const handleKeyDown = (e) => {
-            if (e.key === 'Escape') setSliderOpen(false);
+        if (!dropdownOpen) return;
+        const handleClickOutside = (e) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+                setDropdownOpen(false);
+            }
         };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [sliderOpen]);
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') setDropdownOpen(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [dropdownOpen]);
 
     const toggleSidebar = () => setCollapsed((current) => {
         const next = !current;
@@ -70,31 +61,74 @@ export function AppLayout() {
         return next;
     });
 
+    const handleSignOut = () => {
+        setDropdownOpen(false);
+        logout();
+        navigate('/login');
+    };
+
     return (<div className={`app-shell${collapsed ? ' sidebar-collapsed' : ''}`}>
       <header className="topbar">
         <NavLink className="brand" to="/" aria-label="TrialSync workspace">
           <span className="brand-mark" aria-hidden="true"><i /><i /><i /></span>
           <span><strong>TrialSync</strong><small>Trial workspace</small></span>
         </NavLink>
-        <button
-          className="account-trigger"
-          type="button"
-          onClick={() => setSliderOpen(true)}
-          aria-expanded={sliderOpen}
-          aria-controls="user-slider-drawer"
-          aria-label={`${user?.display_name ?? 'User'} account menu`}
-        >
-          <span className="account-name">{user?.display_name}</span>
-          <span className="account-avatar" aria-hidden="true">
-            {initials(user?.display_name)}
-          </span>
-        </button>
+        <div className="account-area">
+          <button
+            className="theme-toggle"
+            type="button"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            <span aria-hidden="true">{theme === 'dark' ? '☀️' : '🌙'}</span>
+          </button>
+          <div className="account-menu" ref={dropdownRef}>
+            <button
+              className="account-trigger"
+              type="button"
+              onClick={() => setDropdownOpen((open) => !open)}
+              aria-expanded={dropdownOpen}
+              aria-haspopup="menu"
+              aria-label={`${user?.display_name ?? 'User'} account menu`}
+            >
+              <span className="account-avatar" aria-hidden="true">
+                {initials(user?.display_name)}
+              </span>
+              <span className="account-name">{user?.display_name}</span>
+              <span className="account-arrow" aria-hidden="true">{dropdownOpen ? '▴' : '▾'}</span>
+            </button>
+            {dropdownOpen && (
+              <div className="account-popover" role="menu">
+                <div className="account-identity">
+                  <strong>{user?.display_name ?? 'User'}</strong>
+                  <span className="account-email">{user?.email ?? 'demo@trialsync.example'}</span>
+                </div>
+                <button
+                  type="button"
+                  className="dropdown-signout-btn"
+                  role="menuitem"
+                  onClick={handleSignOut}
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </header>
 
       <div className="shell-grid">
         <aside className="sidebar" aria-label="Primary navigation">
           <div className="sidebar-main">
-            <button className="sidebar-toggle" type="button" onClick={toggleSidebar} aria-expanded={!collapsed} aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'} title={collapsed ? 'Expand navigation' : 'Collapse navigation'}>
+            <button
+              className="sidebar-collapse-button"
+              type="button"
+              onClick={toggleSidebar}
+              aria-expanded={!collapsed}
+              aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+              title={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+            >
               <span className="menu-icon" aria-hidden="true"><i /><i /><i /></span>
             </button>
             <nav>
@@ -108,78 +142,5 @@ export function AppLayout() {
 
         <main className="page" id="main-content"><Outlet /></main>
       </div>
-
-      {/* User Preferences Slider Drawer & Backdrop */}
-      <div
-        className={`user-slider-backdrop${sliderOpen ? ' open' : ''}`}
-        onClick={() => setSliderOpen(false)}
-        aria-hidden="true"
-      />
-      <aside
-        id="user-slider-drawer"
-        className={`user-slider${sliderOpen ? ' open' : ''}`}
-        aria-label="Account preferences"
-        aria-hidden={!sliderOpen}
-      >
-        <div className="user-slider-header">
-          <div className="user-slider-profile">
-            <span className="user-slider-avatar" aria-hidden="true">
-              {initials(user?.display_name)}
-            </span>
-            <div className="user-slider-info">
-              <strong>{user?.display_name ?? 'Coordinator'}</strong>
-              <small>{user?.is_catalog_admin ? 'Catalog Administrator' : 'Clinical Research Coordinator'}</small>
-            </div>
-          </div>
-          <button
-            type="button"
-            className="user-slider-close"
-            onClick={() => setSliderOpen(false)}
-            aria-label="Close menu"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="user-slider-body">
-          <div className="user-slider-section">
-            <span className="user-slider-section-title">Theme</span>
-            <div className="theme-toggle-group" role="group" aria-label="Theme options">
-              <button
-                type="button"
-                className={`theme-toggle-btn${theme === 'light' ? ' active' : ''}`}
-                onClick={() => setTheme('light')}
-                aria-pressed={theme === 'light'}
-              >
-                <span className="theme-icon" aria-hidden="true">☀️</span>
-                <span>Light</span>
-              </button>
-              <button
-                type="button"
-                className={`theme-toggle-btn${theme === 'dark' ? ' active' : ''}`}
-                onClick={() => setTheme('dark')}
-                aria-pressed={theme === 'dark'}
-              >
-                <span className="theme-icon" aria-hidden="true">🌙</span>
-                <span>Dark</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="user-slider-footer">
-          <button
-            type="button"
-            className="slider-signout-btn"
-            onClick={() => {
-              setSliderOpen(false);
-              logout();
-            }}
-          >
-            <span className="nav-glyph" aria-hidden="true">↗</span>
-            <span>Sign out</span>
-          </button>
-        </div>
-      </aside>
     </div>);
 }

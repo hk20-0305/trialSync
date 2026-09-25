@@ -190,6 +190,14 @@ public class DemoSeedService {
 
         UUID ownerId = user.getId();
 
+        // Ensure secondary demo/e2e user also exists (phase8-browser@trialsync.example)
+        Optional<User> existingE2e = users.findByEmail(E2E_EMAIL);
+        if (existingE2e.isEmpty()) {
+            User e2eUser = new User(E2E_EMAIL, "Phase 8 Browser", passwordHasher.hash(DEMO_PASSWORD));
+            e2eUser.setId(id("user/phase8-browser", null));
+            users.saveAndFlush(e2eUser);
+        }
+
         // 1. Build & persist 6 synthetic patients with deterministic facts
         List<Patient> patientList = buildPatients(ownerId, idNamespace);
         for (Patient p : patientList) {

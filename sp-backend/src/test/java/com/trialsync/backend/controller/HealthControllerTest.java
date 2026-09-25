@@ -35,7 +35,7 @@ class HealthControllerTest {
     @Test
     void testReadyReturnsReadyWhenMigrationMatches() {
         when(jdbcTemplate.queryForObject("select 1", Integer.class)).thenReturn(1);
-        when(jdbcTemplate.queryForList(anyString(), eq(String.class))).thenReturn(List.of("20260802.0014"));
+        when(jdbcTemplate.queryForList(anyString(), eq(String.class))).thenReturn(List.of("20260802.0017"));
 
         HealthResponse response = controller.ready();
         assertEquals("ready", response.status());

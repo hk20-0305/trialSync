@@ -52,6 +52,7 @@ public class DemoSeedRunner implements CommandLineRunner {
     }
 
     public static void main(String[] args) {
+        TrialSyncApplication.loadDotenv();
         String[] runArgs = Arrays.copyOf(args, args.length + 1);
         runArgs[args.length] = "seed-demo";
         SpringApplication.run(TrialSyncApplication.class, runArgs);

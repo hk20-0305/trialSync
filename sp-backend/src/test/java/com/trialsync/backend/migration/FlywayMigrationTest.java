@@ -1,6 +1,7 @@
 package com.trialsync.backend.migration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -105,19 +106,26 @@ class FlywayMigrationTest {
                     "clinical_concepts",
                     "patient_change_events",
                     "flyway_schema_history",
-                    "research_participants",
-                    "research_enrollments",
-                    "research_dose_events",
-                    "research_visit_events",
-                    "research_measurements",
-                    "research_adverse_events",
-                    "research_outcomes",
                     "eligibility_rag_indexes",
                     "eligibility_rag_runs",
                     "eligibility_rag_results");
 
             for (String expected : expectedTables) {
                 assertTrue(tables.contains(expected), "Missing expected table: " + expected);
+            }
+
+            Set<String> removedLegacyTables = Set.of(
+                    "alembic_version",
+                    "research_participants",
+                    "research_enrollments",
+                    "research_dose_events",
+                    "research_visit_events",
+                    "research_measurements",
+                    "research_adverse_events",
+                    "research_outcomes");
+
+            for (String removed : removedLegacyTables) {
+                assertFalse(tables.contains(removed), "Legacy table should have been dropped: " + removed);
             }
 
             // 2. Verify PostgreSQL enums exist
@@ -150,8 +158,8 @@ class FlywayMigrationTest {
                     ResultSet rs = stmt.executeQuery(
                             "SELECT version FROM flyway_schema_history WHERE success = true ORDER BY installed_rank DESC LIMIT 1")) {
                 assertTrue(rs.next(), "flyway_schema_history must have at least one record");
-                assertEquals("20260802.0016", rs.getString("version"),
-                        "Latest schema version must be 20260802.0016 (Eligibility RAG)");
+                assertEquals("20260802.0017", rs.getString("version"),
+                        "Latest schema version must be 20260802.0017 (Cleanup Legacy Research and Alembic)");
             }
         }
     }

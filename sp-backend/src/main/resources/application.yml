@@ -7,13 +7,12 @@ spring:
   application:
     name: TrialSync API
   datasource:
-    # DATABASE_URL is supplied as a JDBC URL, e.g. jdbc:postgresql://localhost:5432/trialsync
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/trialsync}
-    username: ${DATABASE_USERNAME:postgres}
-    password: ${DATABASE_PASSWORD:postgres}
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
     hikari:
       pool-name: trialsync-pool
-      maximum-pool-size: ${DATABASE_POOL_SIZE:10}
+      maximum-pool-size: ${DATABASE_POOL_SIZE}
   jpa:
     open-in-view: false
     hibernate:
@@ -28,12 +27,14 @@ spring:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
-    baseline-version: "20260802.0013"
-    # The two Alembic-era migrations (V20260802_0012, V20260802_0013) are recorded
-    # in flyway_schema_history but their .sql files are not on the Java classpath —
-    # they belong to the Python deployment and are not re-distributed here.
-    # validate-on-migrate=false suppresses the "applied migration not resolved
-    # locally" error that Flyway would otherwise raise for those two rows.
+    # baseline-version="0" ensures that ALL migrations (including V20260802_0012
+    # which creates the full schema and V20260802_0013 which seeds the 25 clinical
+    # concepts) are applied on a completely fresh / empty PostgreSQL database.
+    # All migrations use IF NOT EXISTS / ON CONFLICT DO NOTHING guards so they are
+    # fully idempotent on databases that already have the schema in place.
+    baseline-version: "0"
+    # validate-on-migrate=false suppresses spurious warnings for the PostgreSQL 18
+    # version that is newer than the Flyway release bundled here.
     validate-on-migrate: false
   jackson:
     default-property-inclusion: always
