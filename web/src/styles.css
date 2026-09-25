@@ -29,6 +29,28 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+[data-theme="dark"] {
+  color: #e3ebe8;
+  background: #0f1517;
+  --ink: #e8f0ed;
+  --muted: #8d9e9b;
+  --line: #243235;
+  --surface: #162023;
+  --surface-tint: #1c292c;
+  --canvas: #0f1517;
+  --surface-raised: #1f2d31;
+  --brand: #2ca5ad;
+  --brand-dark: #58d2db;
+  --brand-soft: #143538;
+  --accent: #d8a860;
+  --danger: #e25860;
+  --warning: #e09f32;
+  --success: #47a673;
+  --shadow: 0 14px 38px rgba(0, 0, 0, 0.45);
+  --shadow-menu: 0 18px 45px rgba(0, 0, 0, 0.65);
+  --shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -246,6 +268,334 @@ button:disabled {
 }
 .account-popover a:hover,
 .account-popover button:hover { color: var(--brand-dark); background: var(--surface-tint); }
+
+/* Account trigger button in topbar */
+.account-trigger {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color var(--duration) var(--ease-out), background var(--duration) var(--ease-out);
+}
+.account-trigger:hover,
+.account-trigger:focus-visible {
+  border-color: var(--line);
+  background: var(--surface-tint);
+}
+
+/* User Preferences Slider Drawer & Backdrop */
+.user-slider-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(10, 18, 20, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s var(--ease-out), visibility 0.2s var(--ease-out);
+}
+.user-slider-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.user-slider {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 101;
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  max-width: 88vw;
+  height: 100vh;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  box-shadow: -8px 0 32px rgba(10, 20, 24, 0.16);
+  transform: translateX(100%);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+}
+.user-slider.open {
+  transform: translateX(0);
+}
+
+.user-slider-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.user-slider-profile {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  min-width: 0;
+}
+
+.user-slider-avatar {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  border: 1px solid rgba(23, 101, 107, 0.28);
+  border-radius: 50%;
+  color: var(--brand-dark);
+  background: var(--brand-soft);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.user-slider-info {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.user-slider-info strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-slider-info small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-slider-close {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  background: var(--surface-tint);
+  font-size: 14px;
+  transition: color var(--duration) var(--ease-out), background var(--duration) var(--ease-out);
+}
+.user-slider-close:hover {
+  color: var(--ink);
+  background: var(--line);
+}
+
+.user-slider-body {
+  flex: 1 1 auto;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.user-slider-section {
+  display: grid;
+  gap: 10px;
+}
+
+.user-slider-section-title {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.theme-toggle-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 4px;
+  background: var(--surface-tint);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.theme-toggle-btn {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease-out);
+}
+.theme-toggle-btn:hover {
+  color: var(--ink);
+}
+.theme-toggle-btn.active {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--line);
+  box-shadow: var(--shadow-soft);
+}
+
+.theme-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.user-slider-footer {
+  margin-top: auto;
+  padding: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.slider-signout-btn {
+  display: flex;
+  width: 100%;
+  min-height: 42px;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  background: var(--surface-tint);
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background var(--duration) var(--ease-out), border-color var(--duration) var(--ease-out);
+}
+.slider-signout-btn:hover {
+  background: #fdf0f0;
+  border-color: #d99ba0;
+}
+[data-theme="dark"] .slider-signout-btn:hover {
+  background: rgba(226, 88, 96, 0.16);
+  border-color: var(--danger);
+}
+
+/* Dark theme specific element adaptations */
+[data-theme="dark"] body {
+  color: var(--ink);
+  background: var(--canvas);
+}
+[data-theme="dark"] .topbar {
+  background: rgba(22, 32, 35, 0.96);
+  border-bottom-color: var(--line);
+}
+[data-theme="dark"] .sidebar {
+  background: #121a1c;
+  border-right-color: var(--line);
+}
+[data-theme="dark"] .nav-link {
+  color: #8e9fa0;
+}
+[data-theme="dark"] .nav-link:hover {
+  color: var(--brand-dark);
+  background: var(--surface);
+  border-color: var(--line);
+}
+[data-theme="dark"] .nav-link.active {
+  color: #ffffff;
+  background: var(--brand-soft);
+  border-color: rgba(44, 165, 173, 0.3);
+}
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+[data-theme="dark"] label {
+  color: #9bb0ad;
+}
+[data-theme="dark"] .secondary-button {
+  background: var(--surface);
+  color: var(--brand-dark);
+  border-color: var(--line);
+}
+[data-theme="dark"] .secondary-button:hover {
+  background: var(--surface-tint);
+  border-color: var(--muted);
+}
+[data-theme="dark"] .lede {
+  color: #8fa2a0;
+}
+[data-theme="dark"] .record-table-row > span {
+  color: #97aba8;
+}
+[data-theme="dark"] .history-row:hover,
+[data-theme="dark"] .record-table-row:hover,
+[data-theme="dark"] .history-compact-row:hover {
+  background: rgba(44, 165, 173, 0.08);
+}
+[data-theme="dark"] .auth-panel {
+  border-color: var(--line);
+}
+[data-theme="dark"] .auth-intro {
+  background: linear-gradient(145deg, #14282c, #0f1517);
+}
+[data-theme="dark"] .data-boundary {
+  background: #231f17;
+  border-color: #4a3e2a;
+  color: #deb877;
+}
+[data-theme="dark"] .patient-consistency-panel {
+  background: #231f17;
+  border-color: #5c4c28;
+}
+[data-theme="dark"] .patient-consistency-panel.consistency-conflict {
+  background: #2d181a;
+  border-color: #632e33;
+}
+[data-theme="dark"] .state-potentially_eligible,
+[data-theme="dark"] .state-pass {
+  color: #5dd492;
+  background: rgba(47, 118, 80, 0.25);
+}
+[data-theme="dark"] .state-likely_ineligible,
+[data-theme="dark"] .state-fail {
+  color: #f27b82;
+  background: rgba(159, 54, 61, 0.28);
+}
+[data-theme="dark"] .state-needs_review,
+[data-theme="dark"] .state-unknown {
+  color: #f0b454;
+  background: rgba(154, 106, 24, 0.28);
+}
+[data-theme="dark"] .matrix th {
+  background: var(--surface-tint);
+}
+[data-theme="dark"] .matrix-cell.state-potentially_eligible {
+  background: rgba(47, 118, 80, 0.25);
+}
+[data-theme="dark"] .matrix-cell.state-likely_ineligible {
+  background: rgba(159, 54, 61, 0.28);
+}
+[data-theme="dark"] .matrix-cell.state-needs_review {
+  background: rgba(154, 106, 24, 0.28);
+}
 
 /* Legacy simple account area (used when account-menu is not present) */
 .account-area {
