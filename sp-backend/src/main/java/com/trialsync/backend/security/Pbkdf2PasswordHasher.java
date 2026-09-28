@@ -1,13 +1,14 @@
 package com.trialsync.backend.security;
 
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import java.util.Base64;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import org.springframework.stereotype.Component;
 
 /**
@@ -18,6 +19,15 @@ import org.springframework.stereotype.Component;
  * Python implementation uses {@code base64.urlsafe_b64encode} without stripping padding, so existing
  * password hashes carry the {@code =} characters. Behavioural compatibility with the running system
  * wins over the wording in the document; changing this would invalidate every stored credential.
+ *
+ * <p>The derivation itself is PBKDF2-HMAC-SHA256 computed directly over a single {@link Mac}
+ * instance rather than delegated to {@code SecretKeyFactory("PBKDF2WithHmacSHA256")}. The JDK's
+ * provider re-derives the HMAC key for every one of the iteration rounds, which cost roughly two
+ * seconds per sign-in at {@value #DEFAULT_ITERATIONS} iterations; {@code Mac.doFinal} already resets
+ * the MAC to its initialised state, so one {@code init} can serve every round. The algorithm,
+ * iteration count, salt handling, password encoding (UTF-8, matching Python's {@code
+ * password.encode()}) and therefore every derived digest are unchanged - see
+ * {@code Pbkdf2KnownAnswerTest} for the byte-for-byte compatibility vectors.
  */
 @Component
 public class Pbkdf2PasswordHasher {
@@ -27,7 +37,7 @@ public class Pbkdf2PasswordHasher {
 
     private static final int SALT_BYTES = 16;
     private static final int DERIVED_BITS = 256;
-    private static final String SECRET_KEY_ALGORITHM = "PBKDF2WithHmacSHA256";
+    private static final String PRF_ALGORITHM = "HmacSHA256";
 
     private final SecureRandom random = new SecureRandom();
 
@@ -40,7 +50,7 @@ public class Pbkdf2PasswordHasher {
 
     /** Deterministic variant used by the compatibility tests. */
     public String encode(String password, byte[] salt, int iterations) {
-        byte[] derived = pbkdf2(password, salt, iterations);
+        byte[] derived = derive(password, salt, iterations, DERIVED_BITS / 8);
         Base64.Encoder encoder = Base64.getUrlEncoder();
         return ALGORITHM_LABEL
                 + "$"
@@ -72,25 +82,69 @@ public class Pbkdf2PasswordHasher {
             int iterations = Integer.parseInt(parts[1]);
             byte[] salt = decodeUrlBase64(parts[2]);
             byte[] expected = decodeUrlBase64(parts[3]);
-            byte[] actual = pbkdf2(password, salt, iterations);
+            byte[] actual = derive(password, salt, iterations, DERIVED_BITS / 8);
             return MessageDigest.isEqual(actual, expected);
         } catch (RuntimeException ex) {
             return false;
         }
     }
 
-    private static byte[] pbkdf2(String password, byte[] salt, int iterations) {
+    /**
+     * PBKDF2-HMAC-SHA256 for an explicit derived-key length.
+     *
+     * <p>Package-private so the known-answer tests can also exercise multi-block derivations; the
+     * RFC 7914 vectors publish 64-byte keys, which needs two PRF blocks.
+     *
+     * <p>A single {@link Mac} is initialised once and reused for every PRF call. {@code doFinal}
+     * resets the MAC to the state it was in after {@code init}, keeping the secret key, so the
+     * inner and outer HMAC pads are never rebuilt. This is the same construction OpenSSL's
+     * {@code PKCS5_PBKDF2_HMAC} uses, and it produces identical output - only the per-iteration
+     * JDK key setup is removed.
+     */
+    static byte[] derive(String password, byte[] salt, int iterations, int derivedKeyBytes) {
         if (iterations <= 0) {
             throw new IllegalArgumentException("iteration count must be positive");
         }
+        if (derivedKeyBytes <= 0) {
+            throw new IllegalArgumentException("derived key length must be positive");
+        }
         try {
-            // PBEKeySpec takes a char[]; the JDK encodes it as UTF-8 for PBKDF2WithHmacSHA*,
-            // which matches Python's password.encode() default of UTF-8.
-            PBEKeySpec spec =
-                    new PBEKeySpec(password.toCharArray(), salt, iterations, DERIVED_BITS);
-            SecretKeyFactory factory = SecretKeyFactory.getInstance(SECRET_KEY_ALGORITHM);
-            return factory.generateSecret(spec).getEncoded();
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException ex) {
+            // The JDK encodes the password bytes as UTF-8 for PBKDF2WithHmacSHA*, which matches
+            // Python's password.encode() default of UTF-8. Deriving the bytes directly (rather than
+            // through PBEKeySpec) keeps that encoding explicit.
+            Mac mac = Mac.getInstance(PRF_ALGORITHM);
+            mac.init(new SecretKeySpec(password.getBytes(StandardCharsets.UTF_8), PRF_ALGORITHM));
+
+            int hashLength = mac.getMacLength();
+            int blockCount = (derivedKeyBytes + hashLength - 1) / hashLength;
+            byte[] derived = new byte[blockCount * hashLength];
+
+            // S || INT_32_BE(i): the salt is copied once, only the four-byte block index changes.
+            byte[] saltedBlock = new byte[salt.length + 4];
+            System.arraycopy(salt, 0, saltedBlock, 0, salt.length);
+
+            byte[] u;
+            byte[] accumulator = new byte[hashLength];
+            for (int block = 1; block <= blockCount; block++) {
+                saltedBlock[salt.length] = (byte) (block >>> 24);
+                saltedBlock[salt.length + 1] = (byte) (block >>> 16);
+                saltedBlock[salt.length + 2] = (byte) (block >>> 8);
+                saltedBlock[salt.length + 3] = (byte) block;
+
+                u = mac.doFinal(saltedBlock); // U_1 = PRF(P, S || INT(i))
+                System.arraycopy(u, 0, accumulator, 0, hashLength);
+                for (int iteration = 1; iteration < iterations; iteration++) {
+                    u = mac.doFinal(u); // U_j = PRF(P, U_j-1)
+                    for (int index = 0; index < hashLength; index++) {
+                        accumulator[index] ^= u[index];
+                    }
+                }
+                System.arraycopy(accumulator, 0, derived, (block - 1) * hashLength, hashLength);
+            }
+            return derivedKeyBytes == derived.length
+                    ? derived
+                    : Arrays.copyOf(derived, derivedKeyBytes);
+        } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
             throw new IllegalStateException("PBKDF2-HMAC-SHA256 is unavailable", ex);
         }
     }

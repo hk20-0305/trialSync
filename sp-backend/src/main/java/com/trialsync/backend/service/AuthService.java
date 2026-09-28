@@ -71,8 +71,19 @@ public class AuthService {
      *
      * <p>The same error is returned for an unknown address and a wrong password so the response
      * cannot be used to enumerate accounts.
+     *
+     * <p>Deliberately has no {@code @Transactional}: the lookup runs inside the repository's own
+     * short-lived read-only transaction (Spring Data wraps {@link UserRepository} queries
+     * themselves), which commits and returns its JDBC connection before the caller continues. The
+     * PBKDF2 derivation - the single most expensive step of a sign-in, and the reason a wrong
+     * password cost as much as a correct one - therefore runs with no transaction and no Hibernate
+     * session open, instead of holding a remote database connection for the whole 600,000
+     * iterations. {@link User} carries only basic columns, so the detached instance is fully usable
+     * afterwards.
+     *
+     * <p>An unknown address still short-circuits before any derivation, so a probe against a
+     * non-existent account costs one index lookup.
      */
-    @Transactional(readOnly = true)
     public TokenResponse login(LoginRequest payload) {
         Optional<User> found = users.findByEmail(payload.email().toLowerCase(Locale.ROOT));
         User user =

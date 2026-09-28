@@ -1,22 +1,24 @@
-# Environment and secrets
+# ================================
+# Environment & Secrets
+# ================================
 .env
 .env.*
 !.env.example
 !.env.production.example
 
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-.venv/
-venv/
 
-# Node and frontend output
+# ================================
+# Java / Maven
+# ================================
+target/
+*.class
+*.jar
+*.war
+
+
+# ================================
+# Node / React / Frontend
+# ================================
 node_modules/
 dist/
 coverage/
@@ -24,13 +26,27 @@ coverage/
 playwright-report/
 test-results/
 
-# Editors and operating systems
+
+# ================================
+# IDE / Editors
+# ================================
 .idea/
 .vscode/
+*.iml
 *.swp
-.DS_Store
 
-# Generated application data
+
+# ================================
+# Logs & Generated Data
+# ================================
+*.log
+run.log
 uploads/
 models/
-*.log
+
+
+# ================================
+# OS
+# ================================
+.DS_Store
+Thumbs.db

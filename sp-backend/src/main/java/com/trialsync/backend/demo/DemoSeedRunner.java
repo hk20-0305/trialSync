@@ -1,8 +1,7 @@
 package com.trialsync.backend.demo;
 
 import com.trialsync.backend.TrialSyncApplication;
-import com.trialsync.backend.service.DemoSeedService;
-import com.trialsync.backend.service.DemoSeedService.DemoSeedSummary;
+import com.trialsync.backend.demo.DemoSeedService.DemoSeedSummary;
 import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

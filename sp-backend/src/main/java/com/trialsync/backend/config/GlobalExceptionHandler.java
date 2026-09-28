@@ -1,7 +1,6 @@
 package com.trialsync.backend.config;
 
 import com.trialsync.backend.dto.common.ErrorResponse;
-import com.trialsync.backend.middleware.TraceIdContext;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

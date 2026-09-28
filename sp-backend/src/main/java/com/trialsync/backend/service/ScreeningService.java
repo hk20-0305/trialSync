@@ -14,6 +14,7 @@ import com.trialsync.backend.domain.model.ScreeningResult;
 import com.trialsync.backend.dto.screening.CriterionEvaluationResponse;
 import com.trialsync.backend.dto.screening.PatientSnapshotSummary;
 import com.trialsync.backend.dto.screening.ScreeningCountsResponse;
+import com.trialsync.backend.dto.screening.ScreeningCreateOutcome;
 import com.trialsync.backend.dto.screening.ScreeningCreateRequest;
 import com.trialsync.backend.dto.screening.ScreeningResponse;
 import com.trialsync.backend.dto.screening.TrialVersionSummary;
@@ -36,7 +37,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,6 +61,24 @@ public class ScreeningService {
     private static final TypeReference<Map<String, Object>> JSON_OBJECT = new TypeReference<>() {};
 
     private static final String SYNTHETIC_PATIENT = "Synthetic patient";
+
+    /**
+     * The unique key on {@code (patient_id, trial_version_id)}. Naming it lets
+     * {@link #createScreening} tell "lost a race to another POST" (409, safe) apart from any other
+     * integrity failure (which must keep surfacing the way it does today).
+     */
+    private static final String UNIQUE_PATIENT_TRIAL_INDEX = "ux_screenings_patient_trial_version";
+
+    /**
+     * PostgreSQL's default name for a {@code UNIQUE(patient_id, trial_version_id)} constraint.
+     *
+     * <p>The same rule can be installed two ways and both spellings have to be recognised: the
+     * Flyway migration creates the index under its own name, while a hand-written constraint gets
+     * the table-and-columns name. Either way the driver's message carries the name of the key that
+     * was violated.
+     */
+    private static final String UNIQUE_PATIENT_TRIAL_CONSTRAINT =
+            "screenings_patient_id_trial_version_id_key";
 
     private final PatientRepository patients;
     private final PatientSnapshotRepository patientSnapshots;
@@ -89,27 +110,61 @@ public class ScreeningService {
     /**
      * Port of {@code create_screening}, minus the response read.
      *
+     * <p><b>One screening per patient and trial.</b> When the pair has already been screened - by an
+     * earlier single screening or as part of a batch - the existing screening id comes back with
+     * {@code created = false} and the controller answers 200 instead of 201. The snapshot, the
+     * engine run and every insert are skipped on that path, so a repeat submission costs one indexed
+     * lookup instead of another row in the history.
+     *
      * <p>Python wraps the whole body in {@code try/commit/except: rollback; raise}, so a failure
      * anywhere - an unknown patient, an unapproved version, a database error - leaves no snapshot,
      * no screening and no evaluations behind. Here the transaction boundary is this method:
      * {@link ApplicationError} is unchecked, so it rolls the same work back.
+     *
+     * <p>The unique key on {@code (patient_id, trial_version_id)} is the backstop for the window
+     * between the existence check and the insert. Two concurrent POSTs cannot both win: the loser's
+     * flush raises {@link DataIntegrityViolationException}, which rolls this transaction back and is
+     * re-raised as a 409. {@code DataIntegrityViolationException} is deliberately not handled by the
+     * global handler (it would answer 500), so it is remapped here - but only when the message
+     * names that key, leaving any other integrity failure to surface exactly as it does today.
      *
      * <p>The identifier is returned rather than a response body because Python re-reads the screening
      * <em>after</em> committing. The controller performs that read in a second transaction, which is
      * what makes the freshly written snapshot and evaluation rows visible as loaded associations.
      */
     @Transactional
-    public UUID createScreening(ScreeningCreateRequest request) {
+    public ScreeningCreateOutcome createScreening(ScreeningCreateRequest request) {
         User user = SecurityContext.require();
         Patient patient = ownedPatient(user.getId(), request.patientId());
         TrialVersion version = ownedApprovedVersion(user.getId(), request.trialVersionId());
+
+        // A pair keeps at most one screening whichever entry point wrote it, so one lookup covers
+        // both a repeat submission and a result a batch already produced for this pair: either way
+        // the stored screening id comes back with created = false and nothing is written. Going
+        // through runAndStore's check first here saves the snapshot and the engine run as well.
+        Optional<Screening> alreadyScreened = findExistingScreening(patient.getId(), version.getId());
+        if (alreadyScreened.isPresent()) {
+            return new ScreeningCreateOutcome(alreadyScreened.get().getId(), false);
+        }
+
         com.trialsync.backend.entity.PatientSnapshot snapshot =
                 snapshotService.snapshotForPatient(patient);
         LocalDate screeningDate =
                 request.screeningDate() == null ? LocalDate.now() : request.screeningDate();
-        Screening screening =
-                runAndStore(user.getId(), snapshot, version, screeningDate, null);
-        return screening.getId();
+        try {
+            Screening screening = runAndStore(user.getId(), snapshot, version, screeningDate, null);
+            return new ScreeningCreateOutcome(screening.getId(), true);
+        } catch (DataIntegrityViolationException duplicate) {
+            String message = duplicate.getMessage();
+            if (message != null
+                    && (message.contains(UNIQUE_PATIENT_TRIAL_INDEX)
+                            || message.contains(UNIQUE_PATIENT_TRIAL_CONSTRAINT))) {
+                throw ApplicationError.conflict(
+                        "SCREENING_ALREADY_EXISTS",
+                        "This patient has already been screened against this trial.");
+            }
+            throw duplicate;
+        }
     }
 
     /** Port of {@code get_screening}. */
@@ -142,6 +197,13 @@ public class ScreeningService {
      * only values sourced elsewhere are the trial labels copied onto the screening row and the
      * criterion source text, which Python also takes from the version's criteria.
      *
+     * <p><b>One screening per patient and trial version.</b> The pair is looked up before anything
+     * is evaluated and a pair that already has a result is answered with that stored result: no
+     * second screening row, no second set of {@code criterion_evaluations}, and no re-run of the
+     * engine. This is the only place a screening is ever written, so the rule holds for every
+     * caller - a single submission, a batch cell that repeats a pair an earlier single screening or
+     * an earlier batch already covered, and the demo seed.
+     *
      * <p>The screening row is flushed before its evaluations because they carry its identifier, and
      * the evaluations are flushed before returning so a later failure in the same transaction still
      * rolls the complete unit back.
@@ -152,6 +214,22 @@ public class ScreeningService {
             TrialVersion version,
             LocalDate screeningDate,
             ScreeningBatch batch) {
+        Optional<Screening> existing =
+                findExistingScreening(snapshot.getPatientId(), version.getId());
+        if (existing.isPresent()) {
+            Screening reused = existing.get();
+            if (batch != null && reused.getBatchId() == null) {
+                // Nothing is written for the pair, it is only claimed: a batch that re-screens a
+                // pair no batch owns yet must still list that cell, because the batch report is
+                // built from the screenings stamped with its identifier. A row an earlier batch
+                // already owns is left exactly where it is - that report must not change after the
+                // fact - so the pair simply stays with the batch that produced it.
+                reused.setBatchId(batch.getId());
+                screenings.saveAndFlush(reused);
+            }
+            return reused;
+        }
+
         ScreeningResult result =
                 ScreeningEngine.screen(
                         snapshotService.toDomain(snapshot),
@@ -162,6 +240,7 @@ public class ScreeningService {
                                 screeningDate, SnapshotService.ENGINE_VERSION, null, null));
 
         Screening screening = new Screening(ownerId, snapshot.getId(), version.getId());
+        screening.setPatientId(snapshot.getPatientId());
         screening.setBatchId(batch == null ? null : batch.getId());
         screening.setTrialRegistryId(version.getTrial().getRegistryId());
         screening.setTrialTitle(version.getTrial().getTitle());
@@ -209,6 +288,26 @@ public class ScreeningService {
         }
         criterionEvaluations.saveAllAndFlush(rows);
         return screening;
+    }
+
+    /**
+     * The screening a pair already has, or empty when the pair has none yet.
+     *
+     * <p>This is the check that everything which writes a screening goes through, so it is the one
+     * place the "one screening per patient and trial version" rule is stated. The lookup mirrors the
+     * unique key on {@code (patient_id, trial_version_id)} and covers batch rows as well as single
+     * screenings.
+     *
+     * <p>A snapshot whose patient no longer exists carries a null {@code patient_id}; the unique key
+     * treats nulls as distinct, so such a pair is never "already screened" and is skipped rather
+     * than queried.
+     */
+    private Optional<Screening> findExistingScreening(UUID patientId, UUID trialVersionId) {
+        if (patientId == null) {
+            return Optional.empty();
+        }
+        return screenings.findFirstByPatientIdAndTrialVersionIdOrderByCreatedAtDesc(
+                patientId, trialVersionId);
     }
 
     /**

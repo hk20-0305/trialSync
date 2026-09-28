@@ -1,0 +1,33 @@
+# Build context for the backend image (see sp-backend/Dockerfile). Anything
+# listed here can never reach a layer, so this is the first line of defence for
+# secrets and build output.
+
+# Local environment and secrets - DATABASE_URL, TRIALSYNC_AUTH_SECRET and the
+# provider API keys arrive through the runtime environment instead.
+.env
+.env.*
+!.env.example
+
+# Maven output and local run logs
+target/
+*.log
+run.log
+logs/
+
+# Generated data and local caches
+uploads/
+models/
+
+# Version control, editor and OS metadata
+.git
+.gitignore
+.idea/
+.vscode/
+*.iml
+*.swp
+.DS_Store
+Thumbs.db
+
+# These two files are build instructions, not build inputs
+Dockerfile
+.dockerignore

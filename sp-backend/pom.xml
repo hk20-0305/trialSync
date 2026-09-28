@@ -97,17 +97,6 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
-    <!-- Optional: PostgreSQL-backed integration tests. These auto-skip when Docker is absent. -->
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>postgresql</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <build>
@@ -117,6 +106,13 @@
         <artifactId>spring-boot-maven-plugin</artifactId>
         <configuration>
           <mainClass>com.trialsync.backend.TrialSyncApplication</mainClass>
+          <!-- The plugin's dev-mode default is -XX:TieredStopAtLevel=1, i.e. C1-only JIT, which
+               keeps startup snappy but costs roughly 6x on CPU-bound work: PBKDF2-HMAC-SHA256 at
+               600,000 iterations takes ~2 s per sign-in instead of ~0.15 s. Level 4 is the JVM
+               default (full tiering) and is what `java -jar` in production runs with, so matching
+               it here keeps `mvn spring-boot:run` behaviourally identical to production. It is
+               appended after the plugin's own flag, and the last occurrence wins. -->
+          <jvmArguments>-XX:TieredStopAtLevel=4</jvmArguments>
         </configuration>
       </plugin>
       <plugin>

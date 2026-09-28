@@ -55,6 +55,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 class EndToEndIntegrationIT extends BaseIntegrationTest {
 
@@ -68,6 +69,7 @@ class EndToEndIntegrationIT extends BaseIntegrationTest {
     @Autowired private UserRepository userRepository;
     @Autowired private DocumentRepository documentRepository;
     @Autowired private ScreeningChatMessageRepository chatRepository;
+    @Autowired private JdbcTemplate jdbc;
     @Autowired private ObjectMapper objectMapper;
 
     private User testUser;
@@ -83,6 +85,51 @@ class EndToEndIntegrationIT extends BaseIntegrationTest {
     @AfterEach
     void tearDown() {
         SecurityContext.clear();
+        // The `it` profile points at the real shared Aiven database, where nothing rolls back:
+        // every @Transactional boundary in the services commits for good. A single
+        // `delete from users ...` cannot be relied on here because
+        // screenings.patient_snapshot_id / screenings.trial_version_id are ON DELETE RESTRICT:
+        // PostgreSQL aborts a multi-path cascade as ambiguous, and pre-existing orphan rows with
+        // NULL owner_id (screening_batches, screenings) survive a user delete, polluting the
+        // shared database DemoSeedTest counts globally. So delete leaf-first, scoped to the
+        // `test-` email prefix this class registers in setUp (which also clears rows from a run
+        // interrupted before its own teardown):
+        //   chat/citations -> screenings -> batches/snapshots -> patients/trials/documents -> users
+        jdbc.update(
+                """
+                DELETE FROM screening_chat_messages WHERE screening_id IN (
+                  SELECT s.id FROM screenings s JOIN users u ON u.id = s.owner_id
+                   WHERE u.email LIKE 'test-%@example.com')""");
+        jdbc.update(
+                """
+                DELETE FROM criterion_evaluations WHERE screening_id IN (
+                  SELECT s.id FROM screenings s JOIN users u ON u.id = s.owner_id
+                   WHERE u.email LIKE 'test-%@example.com')""");
+        jdbc.update(
+                """
+                DELETE FROM screenings WHERE owner_id IN (
+                  SELECT id FROM users WHERE email LIKE 'test-%@example.com')""");
+        jdbc.update(
+                """
+                DELETE FROM screening_batches WHERE owner_id IN (
+                  SELECT id FROM users WHERE email LIKE 'test-%@example.com')""");
+        jdbc.update(
+                """
+                DELETE FROM patient_snapshots WHERE owner_id IN (
+                  SELECT id FROM users WHERE email LIKE 'test-%@example.com')""");
+        jdbc.update(
+                """
+                DELETE FROM documents WHERE owner_id IN (
+                  SELECT id FROM users WHERE email LIKE 'test-%@example.com')""");
+        jdbc.update(
+                """
+                DELETE FROM trials WHERE owner_id IN (
+                  SELECT id FROM users WHERE email LIKE 'test-%@example.com')""");
+        jdbc.update(
+                """
+                DELETE FROM patients WHERE owner_id IN (
+                  SELECT id FROM users WHERE email LIKE 'test-%@example.com')""");
+        jdbc.update("DELETE FROM users WHERE email LIKE 'test-%@example.com'");
     }
 
     @Test
@@ -199,8 +246,11 @@ class EndToEndIntegrationIT extends BaseIntegrationTest {
         // -------------------------------------------------------------
         // STEP 6: SCREENING FLOW
         // -------------------------------------------------------------
-        UUID screeningId = screeningService.createScreening(new ScreeningCreateRequest(
-                patientId, approvedVersion.id(), LocalDate.now()));
+        UUID screeningId =
+                screeningService.createScreening(
+                                new ScreeningCreateRequest(
+                                        patientId, approvedVersion.id(), LocalDate.now()))
+                        .screeningId();
         assertNotNull(screeningId);
 
         ScreeningResponse screening = screeningService.getScreening(screeningId);

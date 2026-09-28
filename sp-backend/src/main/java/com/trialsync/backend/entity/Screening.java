@@ -45,6 +45,17 @@ public class Screening extends TimestampedEntity {
     @Column(name = "patient_snapshot_id", nullable = false, columnDefinition = "uuid")
     private UUID patientSnapshotId;
 
+    /**
+     * The patient this screening was run for, copied from the snapshot at write time.
+     *
+     * <p>Added by {@code V20260802_0018} so the "one screening per patient and trial" unique index
+     * can be expressed on this table: without it the pair would span the screenings ->
+     * patient_snapshots join, which an index cannot reach. Nullable because a deleted patient leaves
+     * the snapshot (and this row) without one.
+     */
+    @Column(name = "patient_id", columnDefinition = "uuid")
+    private UUID patientId;
+
     @Column(name = "trial_version_id", nullable = false, columnDefinition = "uuid")
     private UUID trialVersionId;
 
@@ -142,6 +153,14 @@ public class Screening extends TimestampedEntity {
 
     public void setPatientSnapshotId(UUID patientSnapshotId) {
         this.patientSnapshotId = patientSnapshotId;
+    }
+
+    public UUID getPatientId() {
+        return patientId;
+    }
+
+    public void setPatientId(UUID patientId) {
+        this.patientId = patientId;
     }
 
     public UUID getTrialVersionId() {

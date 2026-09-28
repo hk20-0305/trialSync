@@ -2,8 +2,8 @@ package com.trialsync.backend.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trialsync.backend.config.ApplicationError;
+import com.trialsync.backend.config.TraceIdContext;
 import com.trialsync.backend.dto.common.ErrorResponse;
-import com.trialsync.backend.middleware.TraceIdContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

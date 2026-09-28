@@ -153,13 +153,27 @@ class FlywayMigrationTest {
                 assertTrue(enums.contains(expected), "Missing expected PostgreSQL enum: " + expected);
             }
 
-            // 3. Verify latest flyway version is the research RAG migration
+            // 3. Verify latest flyway version is the unique-screening-per-pair migration
             try (Statement stmt = conn.createStatement();
                     ResultSet rs = stmt.executeQuery(
                             "SELECT version FROM flyway_schema_history WHERE success = true ORDER BY installed_rank DESC LIMIT 1")) {
                 assertTrue(rs.next(), "flyway_schema_history must have at least one record");
-                assertEquals("20260802.0017", rs.getString("version"),
-                        "Latest schema version must be 20260802.0017 (Cleanup Legacy Research and Alembic)");
+                assertEquals("20260802.0019", rs.getString("version"),
+                        "Latest schema version must be 20260802.0019 (Unique screening per patient and trial)");
+            }
+
+            // 4. The pair rule has to be the full key: the same patient and trial version can only be
+            //    screened once, batch rows included, so no partial (WHERE ...) screening key may stay.
+            try (Statement stmt = conn.createStatement();
+                    ResultSet rs = stmt.executeQuery(
+                            "SELECT indexdef FROM pg_indexes WHERE tablename = 'screenings'"
+                                    + " AND indexname = 'ux_screenings_patient_trial_version'")) {
+                assertTrue(rs.next(), "The unique key on (patient_id, trial_version_id) must exist");
+                String indexDefinition = rs.getString(1);
+                assertTrue(indexDefinition.contains("patient_id, trial_version_id"),
+                        "The key must cover the patient/trial version pair: " + indexDefinition);
+                assertFalse(indexDefinition.contains("WHERE"),
+                        "The screening uniqueness key must not be partial: " + indexDefinition);
             }
         }
     }

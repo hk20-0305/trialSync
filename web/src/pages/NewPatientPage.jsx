@@ -128,10 +128,6 @@ export function NewPatientPage() {
             <BiologicalSexField value={values.sex} onChange={(value) => updateValue('sex', value)}/>
           </div>
         </div>
-        <div className="data-boundary">
-          <strong>Data boundary</strong>
-          <span>Do not enter real patient information.</span>
-        </div>
         {error && !pending ? <div className="form-error" role="alert">{error}</div> : null}
         <div className="form-actions">
           <Link className="secondary-button" to="/patients">Cancel</Link>
